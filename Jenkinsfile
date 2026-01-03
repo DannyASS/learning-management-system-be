@@ -10,7 +10,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/DannyASS/learning-management-system-be.git'
+                git branch: 'main',
+                    url: 'https://github.com/DannyASS/learning-management-system-be.git',
+                    credentialsId: '9985fbdb-f764-4eda-83a8-0e941aed73c0'
             }
         }
 
