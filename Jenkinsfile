@@ -21,7 +21,7 @@ pipeline {
                 sh '''
                 docker stop lms-backend || true
                 docker rm lms-backend || true
-                docker run -d --name lms-backend -p 8080:8080 lms-backend:latest
+                docker run -d --name lms-backend -p 8082:8080 lms-backend:latest
                 '''
             }
         }
