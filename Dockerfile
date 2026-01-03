@@ -1,13 +1,12 @@
-# build stage
-FROM golang:1.21-alpine AS builder
+# Backend Go
+FROM golang:1.26-alpine
+
 WORKDIR /app
 COPY . .
-RUN go mod tidy
-RUN go build -o server main.go
 
-# final image
-FROM alpine:latest
-WORKDIR /app
-COPY --from=builder /app/server .
+RUN go mod tidy
+RUN go build -o main .
+
 EXPOSE 8080
-CMD ["./server"]
+
+CMD ["./main"]
