@@ -30,6 +30,9 @@ COPY --from=builder /app/main .
 # Install ca-certificates supaya HTTPS bisa jalan
 RUN apk add --no-cache ca-certificates
 
+# Copy Resource
+COPY --from=builder /app/internal/resources ./internal/resources
+
 # Port aplikasi
 EXPOSE 8080
 
