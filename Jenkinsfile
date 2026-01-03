@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/username/lms-backend.git'
+                git branch: 'main', url: 'https://github.com/DannyASS/learning-management-system-be.git'
             }
         }
 
