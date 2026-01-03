@@ -27,16 +27,9 @@ pipeline {
         stage('Deploy Docker') {
             steps {
                 sh '''
-                # Stop & remove container lama
                 docker stop lms-backend || true
                 docker rm lms-backend || true
-
-                # Run container baru dengan env
-                docker run -d \
-                    --name lms-backend \
-                    --env-file ${ENV_FILE} \
-                    -p 8082:8080 \
-                    lms-backend:latest
+                docker run -d --name lms-backend --env-file /opt/lms/.env -p 8082:8080 lms-backend:latest
                 '''
             }
         }
