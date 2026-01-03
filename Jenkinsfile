@@ -2,15 +2,16 @@ pipeline {
     agent any
 
     environment {
-        // Path ke file .env di server
-        ENV_FILE = "/opt/lms/.env"
+        DOCKER_IMAGE = "lms-backend:latest"
+        ENV_FILE_HOST = "/opt/lms/.env"    // path .env di server host
+        ENV_FILE_CONTAINER = "/app/.env"   // path .env di dalam container
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', 
-                    url: 'https://github.com/DannyASS/learning-management-system-be', 
+                git branch: 'main',
+                    url: 'https://github.com/DannyASS/learning-management-system-be',
                     credentialsId: 'github-lms'
             }
         }
@@ -18,8 +19,7 @@ pipeline {
         stage('Build Docker') {
             steps {
                 sh '''
-                # Build Docker image
-                docker build -t lms-backend:latest .
+                    docker build -t ${DOCKER_IMAGE} .
                 '''
             }
         }
@@ -27,20 +27,18 @@ pipeline {
         stage('Deploy Docker') {
             steps {
                 sh '''
-                docker stop lms-backend || true
-                docker rm lms-backend || true
-                docker run -d --name lms-backend --env-file /opt/lms/.env -p 8082:8080 lms-backend:latest
+                    # Stop & remove container lama jika ada
+                    docker stop lms-backend || true
+                    docker rm lms-backend || true
+
+                    # Jalankan container baru, mount .env dari host
+                    docker run -d \
+                        --name lms-backend \
+                        -v ${ENV_FILE_HOST}:${ENV_FILE_CONTAINER} \
+                        -p 8082:8080 \
+                        ${DOCKER_IMAGE}
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Deployment berhasil! Backend jalan di port 8082"
-        }
-        failure {
-            echo "Pipeline gagal. Cek log untuk error"
         }
     }
 }
