@@ -1,10 +1,11 @@
-# Ganti dengan versi Go alpine yang valid
-FROM golang:1.25-alpine3.18
+# Gunakan Go 1.24 alpine (compatible dengan go.mod)
+FROM golang:1.24-alpine
 
 WORKDIR /app
 COPY . .
 
-RUN go mod tidy
+# Install git & ca-certificates jika repo pakai go get HTTPS
+RUN apk add --no-cache git ca-certificates && go mod tidy
 RUN go build -o main .
 
 EXPOSE 8080
