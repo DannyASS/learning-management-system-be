@@ -2,9 +2,12 @@ package worker
 
 import (
 	"log"
+	"os"
 	"sync"
 	"time"
 
+	"github.com/DannyAss/users/config"
+	"github.com/DannyAss/users/internal/database"
 	jobs "github.com/DannyAss/users/internal/worker/job"
 )
 
@@ -23,7 +26,7 @@ func InitJobQueue(buffer int) {
 	quit = make(chan struct{})
 }
 
-// StartWorkers menjalankan n worker
+// ---------------- Non-prefork workers ----------------
 func StartWorkers(n int) {
 	startMtx.Lock()
 	if started {
@@ -41,7 +44,7 @@ func StartWorkers(n int) {
 
 func startWorker(id int) {
 	defer wg.Done()
-	log.Printf("[Worker %d] started", id)
+	log.Printf("[Worker %d] started, PID: %d", id, os.Getpid())
 
 	for {
 		select {
@@ -50,12 +53,10 @@ func startWorker(id int) {
 			return
 		case job, ok := <-jobs.JobQueue:
 			if !ok {
-				// channel closed -> exit
-				log.Printf("[Worker %d] job queue closed, exiting", id)
+				log.Printf("[Worker %d] job queue closed", id)
 				return
 			}
 
-			// protect from panic di job.Process()
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
@@ -63,10 +64,8 @@ func startWorker(id int) {
 					}
 				}()
 
-				// eksekusi job (job.Process harus handle error sendiri)
 				if err := job.Process(); err != nil {
 					log.Printf("[Worker %d] job error: %v", id, err)
-					// optional: retry, send to dead-letter queue, dll
 				} else {
 					log.Printf("[Worker %d] job finished", id)
 				}
@@ -75,13 +74,60 @@ func startWorker(id int) {
 	}
 }
 
-// StopWorkers memicu shutdown worker dan menunggu sampai selesai
-func StopWorkers(timeout time.Duration) {
-	// kirim sinyal stop
-	close(quit)
+// ---------------- Prefork-safe workers ----------------
+func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
+	for i := 0; i < n; i++ {
+		go func(workerID int) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Println("Recovered panic in worker", workerID, "PID", os.Getpid(), ":", r)
+				}
+			}()
 
-	// optionally close job queue if you want
-	// close(jobs.JobQueue)
+			log.Printf("[Prefork Worker %d] started, PID: %d", workerID, os.Getpid())
+
+			// DB manager per worker (fork-safe)
+			db := database.NewDBManager(cfg.DBConnnect)
+			if db == nil {
+				log.Fatal("DB Manager init failed in worker", workerID)
+			}
+
+			// Worker loop prefork-safe
+			for {
+				select {
+				case <-quit:
+					log.Printf("[Prefork Worker %d] received stop signal", workerID)
+					return
+				case job, ok := <-jobs.JobQueue:
+					if !ok {
+						log.Printf("[Prefork Worker %d] job queue closed", workerID)
+						return
+					}
+
+					func() {
+						defer func() {
+							if r := recover(); r != nil {
+								log.Printf("[Prefork Worker %d] recovered panic: %v", workerID, r)
+							}
+						}()
+
+						// panggil job.Process() sesuai signature
+						if err := job.Process(); err != nil {
+							log.Printf("[Prefork Worker %d] job error: %v", workerID, err)
+						} else {
+							log.Printf("[Prefork Worker %d] job finished", workerID)
+						}
+					}()
+				}
+			}
+
+		}(i)
+	}
+}
+
+// Stop workers
+func StopWorkers(timeout time.Duration) {
+	close(quit)
 
 	done := make(chan struct{})
 	go func() {
@@ -91,8 +137,8 @@ func StopWorkers(timeout time.Duration) {
 
 	select {
 	case <-done:
-		log.Println("all workers stopped")
+		log.Println("All workers stopped")
 	case <-time.After(timeout):
-		log.Println("stop workers timeout")
+		log.Println("Stop workers timeout")
 	}
 }

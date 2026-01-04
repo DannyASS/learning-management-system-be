@@ -2,7 +2,6 @@ package boostrap
 
 import (
 	"log"
-	"os"
 	"runtime"
 
 	"github.com/DannyAss/users/config"
@@ -18,18 +17,9 @@ import (
 
 func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	prefork := runtime.GOOS != "windows" && cfg.AppEnv != "dev"
-	dbmanager := database.NewDBManager(cfg.DBConnnect)
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered panic in worker PID", os.Getpid(), ":", r)
-		}
-	}()
 
 	engine := html.New("./internal/resources/templates", ".html")
-	engine.AddFunc("T", func(key string) string {
-		return key
-	})
+	engine.AddFunc("T", func(key string) string { return key })
 	engine.Debug(cfg.AppDebug)
 
 	app := fiber.New(fiber.Config{
@@ -40,22 +30,42 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 		JSONEncoder:   sonic.Marshal,
 		JSONDecoder:   sonic.Unmarshal,
 		Views:         engine,
-		// BodyLimit: 8 * 1024 * 1024, // 8MB
 	})
 
+	// Logger
 	app.Use(logger.New())
 
+	// Custom middlewares
 	middleware.InitMiddlewares(app, cfg)
 
+	// JobQueue global
 	worker.InitJobQueue(1000)
-	worker.StartWorkers(3)
 
+	var dbmanager *database.DBManager
+
+	if !prefork {
+		// Non-prefork: DB global
+		dbmanager = database.NewDBManager(cfg.DBConnnect)
+		if dbmanager == nil {
+			log.Fatal("DB Manager initialization failed")
+		}
+
+		// Start workers normal
+		worker.StartWorkers(3)
+	} else {
+		// Prefork: DB per worker di StartWorkersPreforkSafe
+		worker.StartWorkersPreforkSafe(3, cfg)
+	}
+
+	// Routes
 	router.InitAllRoutes(app, dbmanager, cfg)
 
-	// Cleanup function to close db connections gracefully
+	// Cleanup function
 	cleanup := func() {
 		_ = app.Shutdown()
-		dbmanager.Close()
+		if dbmanager != nil {
+			dbmanager.Close()
+		}
 		log.Println("Shutdown completed: app & database closed")
 	}
 
