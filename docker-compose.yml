@@ -4,8 +4,8 @@ services:
   backend:
     image: lms-backend:latest
     container_name: lms-backend
-    restart: always
     env_file:
       - /opt/lms/.env
     ports:
       - "8082:8080"
+    restart: unless-stopped

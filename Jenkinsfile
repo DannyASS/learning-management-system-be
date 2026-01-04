@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "lms-backend:latest"
+        COMPOSE_DIR = "/opt/lms"      // Folder tempat docker-compose.yml & .env
     }
 
     stages {
@@ -23,12 +24,14 @@ pipeline {
             }
         }
 
-        stage('Deploy with Docker Compose') {
+        stage('Deploy Backend') {
             steps {
-                sh '''
-                    docker-compose down
-                    docker-compose up -d
-                '''
+                // Jalankan docker compose di host
+                sh """
+                    cd ${COMPOSE_DIR}
+                    docker compose down
+                    docker compose up -d
+                """
             }
         }
     }
