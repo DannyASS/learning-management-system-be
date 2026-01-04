@@ -38,7 +38,7 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	// Custom middlewares
 	middleware.InitMiddlewares(app, cfg)
 
-	// JobQueue global
+	// JobQueue global (init sekali)
 	worker.InitJobQueue(1000)
 
 	var dbmanager *database.DBManager
@@ -53,14 +53,14 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 		// Start workers normal
 		worker.StartWorkers(3)
 	} else {
-		// Prefork: DB per worker di StartWorkersPreforkSafe
+		// Prefork: DB per worker di worker goroutine
 		worker.StartWorkersPreforkSafe(3, cfg)
 	}
 
 	// Routes
 	router.InitAllRoutes(app, dbmanager, cfg)
 
-	// Cleanup function
+	// Cleanup
 	cleanup := func() {
 		_ = app.Shutdown()
 		if dbmanager != nil {

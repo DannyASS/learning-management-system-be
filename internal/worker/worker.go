@@ -18,7 +18,7 @@ var (
 	startMtx sync.Mutex
 )
 
-// InitJobQueue harus dipanggil sekali di bootstrap
+// InitJobQueue harus dipanggil sekali di Buildapp
 func InitJobQueue(buffer int) {
 	if jobs.JobQueue == nil {
 		jobs.JobQueue = make(chan jobs.Job, buffer)
@@ -64,6 +64,7 @@ func startWorker(id int) {
 					}
 				}()
 
+				// job.Process() tetap tanpa parameter
 				if err := job.Process(); err != nil {
 					log.Printf("[Worker %d] job error: %v", id, err)
 				} else {
@@ -80,7 +81,7 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 		go func(workerID int) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Println("Recovered panic in worker", workerID, "PID", os.Getpid(), ":", r)
+					log.Println("[Prefork Worker]", workerID, "recovered panic, PID:", os.Getpid(), ":", r)
 				}
 			}()
 
@@ -92,7 +93,6 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 				log.Fatal("DB Manager init failed in worker", workerID)
 			}
 
-			// Worker loop prefork-safe
 			for {
 				select {
 				case <-quit:
@@ -111,7 +111,7 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 							}
 						}()
 
-						// panggil job.Process() sesuai signature
+						// panggil job.Process() sesuai signature lama
 						if err := job.Process(); err != nil {
 							log.Printf("[Prefork Worker %d] job error: %v", workerID, err)
 						} else {
@@ -120,7 +120,6 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 					}()
 				}
 			}
-
 		}(i)
 	}
 }
