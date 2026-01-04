@@ -9,6 +9,7 @@ import (
 	"github.com/DannyAss/users/config"
 	"github.com/DannyAss/users/internal/database"
 	jobs "github.com/DannyAss/users/internal/worker/job"
+	"github.com/DannyAss/users/pkg/utils"
 )
 
 var (
@@ -88,7 +89,16 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 
 			// DB per worker
 			db := database.NewDBManager(cfg.DBConnnect)
+			cryptoSvc, err := utils.NewCryptoService([]byte(cfg.AppKey))
+			if err != nil {
+				log.Fatal("Failed to init crypto:", err)
+			}
+
 			if db == nil {
+				log.Fatal("DB Manager init failed in worker", workerID)
+			}
+
+			if cryptoSvc == nil {
 				log.Fatal("DB Manager init failed in worker", workerID)
 			}
 
