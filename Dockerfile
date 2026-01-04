@@ -2,26 +2,39 @@
 # Stage 1: Build
 # ----------------------
 FROM golang:1.24-alpine AS builder
+
+# Set working directory
 WORKDIR /app
+
+# Copy go.mod & go.sum, download dependencies
 COPY go.mod go.sum ./
-RUN apk add --no-cache git ca-certificates && go mod download
+RUN apk add --no-cache git ca-certificates \
+    && go mod download
+
+# Copy seluruh project
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./main.go
+
+# Build binary (sesuaikan path main.go jika ada di root)
+RUN go build -o main ./main.go
 
 # ----------------------
 # Stage 2: Runtime
 # ----------------------
 FROM alpine:latest
+
 WORKDIR /app
 
-# Install tini
-RUN apk add --no-cache tini ca-certificates
+# Copy binary dari builder
+COPY --from=builder /app/main .
 
-COPY --from=builder /server /app/server
+# Install ca-certificates supaya HTTPS bisa jalan
+RUN apk add --no-cache ca-certificates
+
+# Copy Resource
 COPY --from=builder /app/internal/resources ./internal/resources
 
+# Port aplikasi
 EXPOSE 8080
 
-# Prefork-safe: tini menangani PID 1 & forward signal
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/server"]
+# Jalankan aplikasi
+CMD ["./main"]
