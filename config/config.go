@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -77,6 +79,9 @@ func InitConfig() *ConfigEnv {
 		log.Fatalf("Error reading .env file, %s", err)
 	}
 	viper.AutomaticEnv()
+	appKey := getAppKey()
+	log.Printf("🔑 Using APP_KEY: '%s' (length: %d)",
+		maskKey(appKey), len(appKey))
 	conenv.DBConnnect = DBLoad()
 	if err := viper.Unmarshal(&conenv); err != nil {
 		log.Fatalf("Unable to decode into struct, %v", err)
@@ -121,4 +126,45 @@ func GetBoolWithDefault(key string, def bool) bool {
 		return def
 	}
 	return viper.GetBool(key)
+}
+
+func getAppKey() string {
+	// Priority 1: Environment variable langsung (dari docker-compose)
+	if key := os.Getenv("APP_KEY"); key != "" {
+		log.Println("📦 Using APP_KEY from docker-compose environment")
+		return cleanKey(key)
+	}
+
+	// Priority 2: .env file
+	log.Println("📄 Using APP_KEY from .env file")
+	// Note: .env sudah di-load oleh godotenv
+	if key := os.Getenv("APP_KEY"); key != "" {
+		return cleanKey(key)
+	}
+
+	log.Fatal("❌ APP_KEY not found in environment or .env file")
+	return ""
+}
+
+func cleanKey(key string) string {
+	// Remove whitespace, quotes, newlines
+	key = strings.TrimSpace(key)
+	key = strings.Trim(key, "\"'")
+	key = strings.ReplaceAll(key, "\n", "")
+	key = strings.ReplaceAll(key, "\r", "")
+	key = strings.ReplaceAll(key, "\t", "")
+
+	// Log jika ada perubahan
+	if len(key) != 32 {
+		log.Printf("⚠️  Key length is %d, hashing to 32 bytes", len(key))
+	}
+
+	return key
+}
+
+func maskKey(key string) string {
+	if len(key) <= 8 {
+		return "***"
+	}
+	return key[:4] + "***" + key[len(key)-4:]
 }
