@@ -18,7 +18,7 @@ var (
 	startMtx sync.Mutex
 )
 
-// InitJobQueue harus dipanggil sekali di Buildapp
+// InitJobQueue global (non-prefork)
 func InitJobQueue(buffer int) {
 	if jobs.JobQueue == nil {
 		jobs.JobQueue = make(chan jobs.Job, buffer)
@@ -86,13 +86,13 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 
 			log.Printf("[Prefork Worker %d] started, PID: %d", workerID, os.Getpid())
 
-			// DB manager per worker
+			// DB per worker
 			db := database.NewDBManager(cfg.DBConnnect)
 			if db == nil {
 				log.Fatal("DB Manager init failed in worker", workerID)
 			}
 
-			// JobQueue per worker (fork-safe)
+			// JobQueue per worker
 			jobQueue := make(chan jobs.Job, 1000)
 
 			for {
@@ -125,7 +125,7 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 	}
 }
 
-// Stop workers
+// Stop workers dengan timeout
 func StopWorkers(timeout time.Duration) {
 	close(quit)
 
