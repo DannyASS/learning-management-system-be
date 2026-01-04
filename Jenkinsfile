@@ -3,11 +3,12 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "lms-backend:latest"
-        COMPOSE_DIR = "/opt/lms"      // Folder tempat docker-compose.yml & .env
+        ENV_FILE_HOST = "/opt/lms/.env"
+        ENV_FILE_CONTAINER = "/app/.env"
+        COMPOSE_DIR = "/opt/lms"
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -18,15 +19,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build -t ${DOCKER_IMAGE} .
-                '''
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
         stage('Deploy Backend') {
             steps {
-                // Jalankan docker compose di host
                 sh """
                     cd ${COMPOSE_DIR}
                     docker compose down
