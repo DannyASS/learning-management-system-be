@@ -2,11 +2,7 @@ package boostrap
 
 import (
 	"log"
-	"os"
-	"os/signal"
 	"runtime"
-	"syscall"
-	"time"
 
 	"github.com/DannyAss/users/config"
 	"github.com/DannyAss/users/internal/database"
@@ -19,7 +15,6 @@ import (
 	"github.com/gofiber/template/html/v2"
 )
 
-// Buildapp membuat Fiber app, workers, dan DB manager sesuai env
 func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	prefork := runtime.GOOS != "windows" && cfg.AppEnv != "dev"
 
@@ -40,22 +35,25 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	// Logger
 	app.Use(logger.New())
 
-	// Middlewares
+	// Custom middlewares
 	middleware.InitMiddlewares(app, cfg)
+
+	// JobQueue global
+	worker.InitJobQueue(1000)
 
 	var dbmanager *database.DBManager
 
+	dbmanager = database.NewDBManager(cfg.DBConnnect)
 	if !prefork {
-		// Non-prefork: DB global & JobQueue global
-		dbmanager = database.NewDBManager(cfg.DBConnnect)
+		// Non-prefork: DB global
 		if dbmanager == nil {
 			log.Fatal("DB Manager initialization failed")
 		}
 
-		worker.InitJobQueue(1000)
+		// Start workers normal
 		worker.StartWorkers(3)
 	} else {
-		// Prefork-safe: DB per worker & JobQueue per worker
+		// Prefork: DB per worker di StartWorkersPreforkSafe
 		worker.StartWorkersPreforkSafe(3, cfg)
 	}
 
@@ -64,29 +62,12 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 
 	// Cleanup function
 	cleanup := func() {
-		log.Println("Shutdown initiated...")
-
-		// Stop workers
-		worker.StopWorkers(5 * time.Second)
-
-		// Close global DB (non-prefork)
+		_ = app.Shutdown()
 		if dbmanager != nil {
 			dbmanager.Close()
 		}
-
-		_ = app.Shutdown()
 		log.Println("Shutdown completed: app & database closed")
 	}
-
-	// Signal handling untuk Docker graceful shutdown
-	go func() {
-		stop := make(chan os.Signal, 1)
-		signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-		<-stop
-		log.Println("Received stop signal")
-		cleanup()
-		os.Exit(0)
-	}()
 
 	return app, cleanup, nil
 }
