@@ -78,9 +78,6 @@ func CookieConfig(env, domain string, value string) fiber.Cookie {
 		HTTPOnly: true,
 		Secure:   isProd, // local=false, prod=true
 		SameSite: func() string {
-			if isProd {
-				return "None"
-			}
 			return "Lax" // localhost aman pake Lax
 		}(),
 		Path:   "/",
