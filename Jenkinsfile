@@ -2,43 +2,34 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "lms-backend:latest"
-        APP_DIR = "/opt/lms-backend"
+        DOCKER_IMAGE = "lms-backend:latest"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/DannyASS/learning-management-system-be',
+                    credentialsId: 'github-lms'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 sh '''
-                  docker build -t ${IMAGE_NAME} .
+                    docker build -t ${DOCKER_IMAGE} .
                 '''
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy with Docker Compose') {
             steps {
                 sh '''
-                  cd ${APP_DIR}
-                  docker compose down
-                  docker compose up -d
+                    docker compose down
+                    docker compose up -d
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Deploy sukses"
-        }
-        failure {
-            echo "❌ Deploy gagal"
         }
     }
 }
