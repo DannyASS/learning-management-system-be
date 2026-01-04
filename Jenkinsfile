@@ -27,8 +27,18 @@ pipeline {
             steps {
                 sh """
                     cd ${COMPOSE_DIR}
-                    docker-compose down
-                    docker-compose up -d
+                    
+                    # Coba docker compose (v2), jika gagal coba docker-compose (v1)
+                    if command -v docker-compose &> /dev/null; then
+                        docker-compose down
+                        docker-compose up -d --build
+                    elif docker compose version &> /dev/null; then
+                        docker compose down
+                        docker compose up -d --build
+                    else
+                        echo "ERROR: docker-compose not found!"
+                        exit 1
+                    fi
                 """
             }
         }
