@@ -1,11 +1,16 @@
 version: "3.9"
-
 services:
   backend:
     image: lms-backend:latest
     container_name: lms-backend
     env_file:
-      - /opt/lms/.env
+      - /opt/lms/.env  # Untuk docker compose environment variables
     ports:
       - "8082:8080"
     restart: unless-stopped
+    volumes:
+      # Mount .env ke WORKDIR container (/app/.env)
+      - /opt/lms/.env:/app/.env  # <-- INI YANG BENAR
+    environment:
+      # Optional: bisa juga set env variables langsung
+      - PORT=8080
