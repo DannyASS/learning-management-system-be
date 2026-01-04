@@ -3,8 +3,6 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "lms-backend:latest"
-        ENV_FILE_HOST = "/opt/lms/.env"
-        ENV_FILE_CONTAINER = "/app/.env"
         COMPOSE_DIR = "/opt/lms"
     }
 
@@ -26,12 +24,39 @@ pipeline {
         stage('Deploy Backend') {
             steps {
                 sh """
+                    echo "=== Starting Deployment ==="
+                    echo "Working directory: \$(pwd)"
+                    echo "Docker Compose version: \$(docker-compose --version)"
+                    
+                    # Navigate to compose directory
                     cd ${COMPOSE_DIR}
-                    echo "deployment stage!"
-                    docker compose down
-                    docker compose up -d --build
+                    echo "Now in: \$(pwd)"
+                    
+                    # Stop and remove containers
+                    echo "Stopping existing containers..."
+                    docker-compose down
+                    
+                    # Start new containers with build
+                    echo "Starting new containers..."
+                    docker-compose up -d --build
+                    
+                    # Check status
+                    echo "Checking container status..."
+                    sleep 3
+                    docker-compose ps
+                    
+                    echo "=== Deployment Complete ==="
                 """
             }
+        }
+    }
+    
+    post {
+        success {
+            echo "Pipeline succeeded! 🎉"
+        }
+        failure {
+            echo "Pipeline failed! 😢"
         }
     }
 }
