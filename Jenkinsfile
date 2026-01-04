@@ -27,8 +27,8 @@ pipeline {
             steps {
                 sh """
                     cd ${COMPOSE_DIR}
-                    docker compose down
-                    docker compose up -d
+                    docker-compose down
+                    docker-compose up -d
                 """
             }
         }
