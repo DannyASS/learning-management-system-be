@@ -28,19 +28,8 @@ pipeline {
                 sh """
                     cd ${COMPOSE_DIR}
                     echo "deployment stage!"
-                    # Coba docker compose (v2), jika gagal coba docker-compose (v1)
-                    if command -v docker-compose &> /dev/null; then
-                        echo "compose 1!"
-                        docker-compose down
-                        docker-compose up -d --build
-                    elif docker compose version &> /dev/null; then
-                        echo "compose 2!"
-                        docker compose down
-                        docker compose up -d --build
-                    else
-                        echo "ERROR: docker-compose not found!"
-                        exit 1
-                    fi
+                    docker compose down
+                    docker compose up -d --build
                 """
             }
         }
