@@ -52,29 +52,17 @@ pipeline {
         stage('Deploy Backend') {
             steps {
                 sh """
-                    echo "=== Starting Deployment ==="
+                    echo "=== Cleaning up old containers ==="
                     
-                    # Navigate ke deploy directory
-                    cd ${DEPLOY_DIR}
-                    echo "Current directory: \$(pwd)"
+                    # Hentikan dan hapus container lama
+                    docker-compose down --remove-orphans || true
                     
-                    # Validasi docker-compose.yml
-                    echo "Validating docker-compose.yml..."
-                    docker-compose config
+                    # Pastikan container dengan nama tersebut tidak ada
+                    docker stop lms-backend 2>/dev/null || true
+                    docker rm lms-backend 2>/dev/null || true
                     
-                    # Deploy
-                    echo "Stopping existing containers..."
-                    docker-compose down
-                    
-                    echo "Starting new containers..."
-                    docker-compose up -d --build
-                    
-                    # Check status
-                    echo "Checking container status..."
-                    sleep 5
-                    docker-compose ps
-                    
-                    echo "=== Deployment Complete ==="
+                    echo "=== Starting new container ==="
+                    docker-compose up -d --build --force-recreate
                 """
             }
         }
