@@ -64,7 +64,6 @@ func startWorker(id int) {
 					}
 				}()
 
-				// job.Process() tetap tanpa parameter
 				if err := job.Process(); err != nil {
 					log.Printf("[Worker %d] job error: %v", id, err)
 				} else {
@@ -81,24 +80,27 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 		go func(workerID int) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Println("[Prefork Worker]", workerID, "recovered panic, PID:", os.Getpid(), ":", r)
+					log.Printf("[Prefork Worker %d] recovered panic, PID: %d: %v", workerID, os.Getpid(), r)
 				}
 			}()
 
 			log.Printf("[Prefork Worker %d] started, PID: %d", workerID, os.Getpid())
 
-			// DB manager per worker (fork-safe)
+			// DB manager per worker
 			db := database.NewDBManager(cfg.DBConnnect)
 			if db == nil {
 				log.Fatal("DB Manager init failed in worker", workerID)
 			}
+
+			// JobQueue per worker (fork-safe)
+			jobQueue := make(chan jobs.Job, 1000)
 
 			for {
 				select {
 				case <-quit:
 					log.Printf("[Prefork Worker %d] received stop signal", workerID)
 					return
-				case job, ok := <-jobs.JobQueue:
+				case job, ok := <-jobQueue:
 					if !ok {
 						log.Printf("[Prefork Worker %d] job queue closed", workerID)
 						return
@@ -111,7 +113,6 @@ func StartWorkersPreforkSafe(n int, cfg *config.ConfigEnv) {
 							}
 						}()
 
-						// panggil job.Process() sesuai signature lama
 						if err := job.Process(); err != nil {
 							log.Printf("[Prefork Worker %d] job error: %v", workerID, err)
 						} else {

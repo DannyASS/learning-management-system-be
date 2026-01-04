@@ -15,6 +15,7 @@ import (
 	"github.com/gofiber/template/html/v2"
 )
 
+// Buildapp membuat Fiber app, workers, dan DB manager sesuai env
 func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	prefork := runtime.GOOS != "windows" && cfg.AppEnv != "dev"
 
@@ -35,25 +36,25 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	// Logger
 	app.Use(logger.New())
 
-	// Custom middlewares
+	// Middlewares
 	middleware.InitMiddlewares(app, cfg)
-
-	// JobQueue global (init sekali)
-	worker.InitJobQueue(1000)
 
 	var dbmanager *database.DBManager
 
 	if !prefork {
-		// Non-prefork: DB global
+		// Non-prefork: DB global & JobQueue global
 		dbmanager = database.NewDBManager(cfg.DBConnnect)
 		if dbmanager == nil {
 			log.Fatal("DB Manager initialization failed")
 		}
 
-		// Start workers normal
+		// JobQueue global
+		worker.InitJobQueue(1000)
+
+		// Start worker goroutines
 		worker.StartWorkers(3)
 	} else {
-		// Prefork: DB per worker di worker goroutine
+		// Prefork: DB per worker & JobQueue per worker di worker goroutine
 		worker.StartWorkersPreforkSafe(3, cfg)
 	}
 
