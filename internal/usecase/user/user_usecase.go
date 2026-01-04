@@ -2,6 +2,7 @@ package user_usecase
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/DannyAss/users/config"
@@ -31,6 +32,7 @@ type IuserUsecae interface {
 }
 
 func NewUserCaseUser(userRepos users_repository.IuserRepos, cfg *config.ConfigEnv, db *database.DBManager) IuserUsecae {
+	fmt.Println("cek cfg apke key :", cfg.AppKey)
 	cs, err := utils.NewCryptoService([]byte(cfg.AppKey))
 	if err != nil {
 		panic(err)

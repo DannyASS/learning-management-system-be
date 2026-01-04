@@ -81,6 +81,19 @@ func (c *CryptoService) Decrypt(b64 string) ([]byte, error) {
 
 	pt, err := c.aead.Open(nil, nonce, ct, []byte(DefaultAAD))
 	if err != nil {
+		fmt.Printf("❌❌❌ DECRYPTION FAILED ❌❌❌\n")
+		fmt.Printf("Error: %v\n", err)
+
+		// Debug: Try without AAD
+		fmt.Printf("\n--- DEBUG: Trying without AAD ---\n")
+		ptNoAAD, err2 := c.aead.Open(nil, nonce, ct, nil)
+		if err2 != nil {
+			fmt.Printf("Also failed without AAD: %v\n", err2)
+		} else {
+			fmt.Printf("⚠️  SUCCESS without AAD! Plaintext: %s\n", string(ptNoAAD))
+			fmt.Printf("⚠️  This indicates AAD mismatch!\n")
+		}
+
 		return nil, fmt.Errorf("decrypt: %w", err)
 	}
 
