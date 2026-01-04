@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "lms-backend:latest"
-        COMPOSE_DIR = "/opt/lms"
+        DEPLOY_DIR = "/opt/lms"  // Directory deploy di server
     }
 
     stages {
@@ -21,28 +21,57 @@ pipeline {
             }
         }
 
+        stage('Prepare Deploy Directory') {
+            steps {
+                sh """
+                    echo "=== Preparing Deploy Directory ==="
+                    
+                    # Copy semua file yang diperlukan ke deploy directory
+                    echo "Copying files to ${DEPLOY_DIR}..."
+                    
+                    # Copy docker-compose.yml
+                    cp docker-compose.yml ${DEPLOY_DIR}/
+                    
+                    # Copy .env jika ada di repo, atau gunakan yang sudah ada di server
+                    if [ -f ".env.example" ]; then
+                        echo "Copying .env.example to ${DEPLOY_DIR}/.env"
+                        cp .env.example ${DEPLOY_DIR}/.env
+                    fi
+                    
+                    # Copy file lain yang dibutuhkan
+                    if [ -d "config" ]; then
+                        cp -r config ${DEPLOY_DIR}/
+                    fi
+                    
+                    echo "Files in ${DEPLOY_DIR}:"
+                    ls -la ${DEPLOY_DIR}/
+                """
+            }
+        }
+
         stage('Deploy Backend') {
             steps {
                 sh """
                     echo "=== Starting Deployment ==="
-                    echo "Working directory: \$(pwd)"
-                    echo "Docker Compose version: \$(docker-compose --version)"
                     
-                    # Navigate to compose directory
-                    cd ${COMPOSE_DIR}
-                    echo "Now in: \$(pwd)"
+                    # Navigate ke deploy directory
+                    cd ${DEPLOY_DIR}
+                    echo "Current directory: \$(pwd)"
                     
-                    # Stop and remove containers
+                    # Validasi docker-compose.yml
+                    echo "Validating docker-compose.yml..."
+                    docker-compose config
+                    
+                    # Deploy
                     echo "Stopping existing containers..."
                     docker-compose down
                     
-                    # Start new containers with build
                     echo "Starting new containers..."
                     docker-compose up -d --build
                     
                     # Check status
                     echo "Checking container status..."
-                    sleep 3
+                    sleep 5
                     docker-compose ps
                     
                     echo "=== Deployment Complete ==="
