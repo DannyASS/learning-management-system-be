@@ -27,16 +27,19 @@ pipeline {
         stage('Deploy Docker') {
             steps {
                 sh '''
-                    # Stop & remove container lama jika ada
-                    docker stop lms-backend || true
-                    docker rm lms-backend || true
+                    docker build -t ${DOCKER_IMAGE} .
 
-                    # Jalankan container baru, mount .env dari host
                     docker run -d \
-                        --name lms-backend \
+                        --name lms-backend-new \
                         -v ${ENV_FILE_HOST}:${ENV_FILE_CONTAINER} \
-                        -p 8082:8080 \
+                        -p 8083:8080 \
                         ${DOCKER_IMAGE}
+
+                    # tunggu backend ready
+                    sleep 10
+
+                    docker rm -f lms-backend || true
+                    docker rename lms-backend-new lms-backend
                 '''
             }
         }
