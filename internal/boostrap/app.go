@@ -2,6 +2,7 @@ package boostrap
 
 import (
 	"log"
+	"os"
 	"runtime"
 
 	"github.com/DannyAss/users/config"
@@ -18,6 +19,12 @@ import (
 func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	prefork := runtime.GOOS != "windows" && cfg.AppEnv != "dev"
 	dbmanager := database.NewDBManager(cfg.DBConnnect)
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered panic in worker PID", os.Getpid(), ":", r)
+		}
+	}()
 
 	engine := html.New("./internal/resources/templates", ".html")
 	engine.AddFunc("T", func(key string) string {
