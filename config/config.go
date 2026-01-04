@@ -86,10 +86,10 @@ func InitConfig() *ConfigEnv {
 	if runtime.GOOS != "windows" {
 		conenv.AppKey = "$zE" + conenv.AppKey
 	}
-	conenv.DBConnnect = DBLoad()
 	if err := viper.Unmarshal(&conenv); err != nil {
 		log.Fatalf("Unable to decode into struct, %v", err)
 	}
+	conenv.DBConnnect = DBLoad()
 
 	log.Println(conenv.DBConnnect.DBMaster)
 	return &conenv
