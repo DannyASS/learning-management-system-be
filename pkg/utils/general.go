@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/DannyAss/users/pkg/i18n"
 	"github.com/DannyAss/users/pkg/presentation"
@@ -71,6 +72,22 @@ func UIntPtr(v int) *uint {
 
 func CookieConfig(env, domain string, value string) fiber.Cookie {
 	isProd := env == "production"
+
+	if value == "" {
+		return fiber.Cookie{
+			Name:     "refresh_token",
+			Value:    value,
+			HTTPOnly: true,
+			Secure:   isProd, // local=false, prod=true
+			SameSite: func() string {
+				return "Lax" // localhost aman pake Lax
+			}(),
+			Path:    "/",
+			Domain:  domain,
+			Expires: time.Now().Add(-time.Hour),
+			MaxAge:  -1,
+		}
+	}
 
 	return fiber.Cookie{
 		Name:     "refresh_token",
