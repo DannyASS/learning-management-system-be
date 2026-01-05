@@ -2,7 +2,6 @@ package user_handler
 
 import (
 	"strconv"
-	"time"
 
 	user_model "github.com/DannyAss/users/internal/models/database_model/user"
 	user_usecase "github.com/DannyAss/users/internal/usecase/user"
@@ -193,7 +192,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	}
 
 	// revoke on DB
-	err := h.userUsecase.Logout(refreshToken)
+	cookie, err := h.userUsecase.Logout(refreshToken)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "failed to revoke token",
@@ -201,15 +200,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	}
 
 	// remove cookie
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Lax",
-		Path:     "/",
-	})
+	c.Cookie(cookie)
 
 	return presentation.Response[any]().
 		SetStatus(true).

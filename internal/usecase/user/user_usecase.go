@@ -27,7 +27,7 @@ type IuserUsecae interface {
 	RefreshToken(userToken string) (*user_model.LoginResponse, error)
 	GetUsers(req user_model.Pagination) (*map[string]interface{}, error)
 	Updateuser(req user_model.RequestUserGetList) error
-	Logout(refreshToken string) error
+	Logout(refreshToken string) (*fiber.Cookie, error)
 	GetAllTeacher() ([]map[string]interface{}, error)
 }
 
@@ -364,18 +364,21 @@ func (u *userUsecase) Updateuser(req user_model.RequestUserGetList) error {
 	return nil
 }
 
-func (u *userUsecase) Logout(refreshToken string) error {
+func (u *userUsecase) Logout(refreshToken string) (*fiber.Cookie, error) {
 	if refreshToken == "" {
-		return errors.New("refresh token not found")
+		return nil, errors.New("refresh token not found")
 	}
 
 	// revoke token
 	err := u.userRepo.RevokeToken(refreshToken)
+
+	cookies := utils.CookieConfig(u.cfg.AppEnv, u.cfg.AppDomain, "")
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &cookies, nil
 }
 
 func (u *userUsecase) GetAllTeacher() ([]map[string]interface{}, error) {
