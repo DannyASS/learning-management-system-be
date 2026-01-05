@@ -129,12 +129,12 @@ func (c *CryptoService) VerifyString(password, hashedPassword string) (bool, err
 	computedHash := argon2.IDKey([]byte(password), salt, Argon2Time, Argon2Memory, Argon2Threads, Argon2KeyLen)
 
 	if len(computedHash) != len(storedHash) {
-		return false, nil
+		return false, errors.New("not identic")
 	}
 
 	for i := 0; i < len(computedHash); i++ {
 		if computedHash[i] != storedHash[i] {
-			return false, nil
+			return false, errors.New("not identic")
 		}
 	}
 
