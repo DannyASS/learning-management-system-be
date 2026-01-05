@@ -44,18 +44,21 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	var dbmanager *database.DBManager
 
 	dbmanager = database.NewDBManager(cfg.DBConnnect)
-	if !prefork {
-		// Non-prefork: DB global
-		if dbmanager == nil {
-			log.Fatal("DB Manager initialization failed")
-		}
-
-		// Start workers normal
-		worker.StartWorkers(3)
-	} else {
-		// Prefork: DB per worker di StartWorkersPreforkSafe
-		worker.StartWorkersPreforkSafe(3, cfg)
+	if dbmanager == nil {
+		log.Fatal("DB Manager initialization failed")
 	}
+	worker.StartWorkers(3)
+	// if !prefork {
+	// 	// Non-prefork: DB global
+	// 	if dbmanager == nil {
+	// 		log.Fatal("DB Manager initialization failed")
+	// 	}
+
+	// 	// Start workers normal
+	// } else {
+	// 	// Prefork: DB per worker di StartWorkersPreforkSafe
+	// 	worker.StartWorkersPreforkSafe(3, cfg)
+	// }
 
 	// Routes
 	router.InitAllRoutes(app, dbmanager, cfg)
