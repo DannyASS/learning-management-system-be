@@ -97,7 +97,6 @@ func CookieConfig(env, domain string, value string) fiber.Cookie {
 		SameSite: func() string {
 			return "Lax" // localhost aman pake Lax
 		}(),
-		Path:   "/",
-		Domain: domain,
+		Path: "/",
 	}
 }
