@@ -2,7 +2,6 @@ package boostrap
 
 import (
 	"log"
-	"runtime"
 
 	"github.com/DannyAss/users/config"
 	"github.com/DannyAss/users/internal/database"
@@ -16,7 +15,6 @@ import (
 )
 
 func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
-	prefork := runtime.GOOS != "windows" && cfg.AppEnv != "dev"
 
 	engine := html.New("./internal/resources/templates", ".html")
 	engine.AddFunc("T", func(key string) string { return key })
