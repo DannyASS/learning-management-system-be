@@ -293,11 +293,52 @@ func (c *classesRepository) GetAllClassCourses(model classes_model.ClassCourse) 
 	return data, nil
 }
 
-// func (c *classesRepository) GetInformDashboardClass(idClass int) (*classes_model.DashBoardInformation){
-// 	tx := c.getDB()
+func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) (map[string]interface{}, error) {
+	var data map[string]interface{}
 
-// 	tx = tx.Raw(
-// 		`Select * from
-// 		`
-// 	)
-// }
+	tx := c.getDB()
+
+	courseSub := c.getDB().
+		Select(`
+			class_id,
+			count(*) courses
+		`).
+		Model(&classes_model.ClassCourse{}).
+		Group("class_id")
+
+	studentSub := c.getDB().
+		Select(`
+			class_id,
+			count(*) students
+		`).
+		Model(&classes_model.ClassStudent{}).
+		Group("class_id")
+
+	assigmentSub := c.getDB().
+		Select(`
+			class_id,
+			count(*) assigments
+		`).
+		Model(&classes_model.ClassAssignment{}).
+		Where("status = ?", "active").
+		Group("class_id")
+
+	if teacherId != 0 {
+		courseSub = courseSub.Where("teacher_id = ?", teacherId)
+	}
+
+	tx = tx.Select(`
+		b.courses,
+		c.students,
+		d.assigments
+	`).Table("class_hdr a").
+		Joins("Join (?) b on b.class_id = a.id", courseSub).
+		Joins("Join (?) c on c.class_id = a.id", studentSub).
+		Joins("Join (?) d on d.class_id = a.id", assigmentSub).Scan(&data)
+
+	if err := tx.Error; err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}

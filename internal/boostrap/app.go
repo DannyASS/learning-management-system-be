@@ -23,7 +23,7 @@ func Buildapp(cfg *config.ConfigEnv) (*fiber.App, func(), error) {
 	engine.Debug(cfg.AppDebug)
 
 	app := fiber.New(fiber.Config{
-		Prefork:       prefork,
+		Prefork:       false,
 		StrictRouting: false,
 		CaseSensitive: false,
 		ServerHeader:  cfg.AppName,
