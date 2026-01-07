@@ -27,7 +27,7 @@ var (
 )
 
 type IClassesUsecase interface {
-	GetListClassesPage(req classes_model.ClassHDRRequest) (*map[string]interface{}, error)
+	GetListClassesPage(req classes_model.ClassHDRRequest, teacherId int) (*map[string]interface{}, error)
 	CreateClass(req classes_model.ClassHdrDTO) error
 	UpdateClass(req classes_model.ClassHdrDTO, StudentFilePath string, CoursesFilePath string) error
 	GetAvailableStudent() ([]classes_model.StudentAvailable, error)
@@ -44,10 +44,10 @@ func NewClassesUsecase(repo classes_repository.IClassesRepository, irepo import_
 	return &classUsecase{repo: repo, irepo: irepo, db: db, crepo: crepo}
 }
 
-func (c *classUsecase) GetListClassesPage(req classes_model.ClassHDRRequest) (*map[string]interface{}, error) {
+func (c *classUsecase) GetListClassesPage(req classes_model.ClassHDRRequest, teacherId int) (*map[string]interface{}, error) {
 	var list []classes_model.ClassHDRListDTOL
 
-	data, page, err := c.repo.GetListClassesPage(req)
+	data, page, err := c.repo.GetListClassesPage(req, teacherId)
 	if err != nil {
 		return nil, err
 	}

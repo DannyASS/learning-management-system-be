@@ -32,7 +32,16 @@ func (ctrl *ClassesHandler) GetlistClassPage(c *fiber.Ctx) error {
 				Json(c)
 		}
 
-		data, err := ctrl.uc.GetListClassesPage(params)
+		userId := c.Locals("userID")
+		teacherId, cOk := userId.(uint)
+		if !cOk {
+			return presentation.Response[any]().
+				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail("user ditolak").
+				Json(c)
+		}
+
+		data, err := ctrl.uc.GetListClassesPage(params, int(teacherId))
 		if err != nil {
 			return presentation.Response[any]().
 				SetErrorCode("422").SetStatusCode(422).
@@ -344,7 +353,7 @@ func (ctrl *ClassesHandler) GetInformDasboardClass(c *fiber.Ctx) error {
 		roleIds, ok := roleLocal.(uint)
 		if !ok {
 			return presentation.Response[any]().
-				SetErrorCode("401").SetStatusCode(401).
+				SetErrorCode("422").SetStatusCode(422).
 				SetErrorDetail("role ditolak").
 				Json(c)
 		}
@@ -355,7 +364,7 @@ func (ctrl *ClassesHandler) GetInformDasboardClass(c *fiber.Ctx) error {
 			userId, cek := c.Locals("userID").(uint)
 			if !cek {
 				return presentation.Response[any]().
-					SetErrorCode("401").SetStatusCode(401).
+					SetErrorCode("422").SetStatusCode(422).
 					SetErrorDetail("user Id ditolak").
 					Json(c)
 			}

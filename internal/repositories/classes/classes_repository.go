@@ -16,7 +16,7 @@ type classesRepository struct {
 
 type IClassesRepository interface {
 	WithTx(tx *gorm.DB) IClassesRepository
-	GetListClassesPage(page classes_model.ClassHDRRequest) ([]classes_model.ClassHDRQuery, *classes_model.ClassHDRRequest, error)
+	GetListClassesPage(page classes_model.ClassHDRRequest, teacherId int) ([]classes_model.ClassHDRQuery, *classes_model.ClassHDRRequest, error)
 	BulkInsertStudentClass(model []classes_model.ClassStudent) error
 	InsertStudentClass(model classes_model.ClassStudent) (*classes_model.ClassStudent, error)
 	InsertClassHDR(model classes_model.ClassHdr) (*classes_model.ClassHdr, error)
@@ -50,29 +50,64 @@ func (c *classesRepository) getDB() *gorm.DB {
 	return c.db.GetDB()
 }
 
-func (c *classesRepository) GetListClassesPage(page classes_model.ClassHDRRequest) ([]classes_model.ClassHDRQuery, *classes_model.ClassHDRRequest, error) {
+func (c *classesRepository) GetListClassesPage(page classes_model.ClassHDRRequest, teacherId int) ([]classes_model.ClassHDRQuery, *classes_model.ClassHDRRequest, error) {
 	var (
 		data      []classes_model.ClassHDRQuery
 		totalData int64
 	)
-	tx := c.getDB().Debug()
 
-	tx = tx.Table("class_hdr as a").
-		Joins("left join class_student as b on a.id = b.class_id").
-		Joins("left join class_module as cm on cm.class_id = a.id and cm.status = 'completed'").
-		Joins("left join class_module as cn on cm.class_id = a.id").
-		Group("a.name, a.id")
+	tx := c.getDB()
+
+	moduleAktifSub := c.getDB().Select(`
+		class_id,
+		class_course_id,
+		count(*) modules
+	`).Table("class_module").
+		Where("status = ?", "completed").
+		Group("class_id, class_course_id")
+
+	moduleTotalSub := c.getDB().Select(`
+		class_id,
+		class_course_id,
+		count(*) modules
+	`).Table("class_module").
+		Group("class_id, class_course_id")
+
+	courseSub := c.getDB().
+		Select(`
+			b1.class_id,
+			count(b1.id) courses,
+			b2.modules modul_aktif,
+			b3.modules modul_total
+		`).
+		Table("class_course b1").
+		Joins("join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
+		Joins("join (?) b3 on b1.class_id = b2.class_id and b1.id = b3.class_course_id", moduleTotalSub).
+		Group("class_id, b2.modules, b3.modules")
+
+	studentSub := c.getDB().
+		Select(`
+			class_id,
+			count(*) students
+		`).
+		Table("class_student").
+		Group("class_id")
+
+	if teacherId != 0 {
+		courseSub = courseSub.Where("teacher_id = ?", teacherId)
+	}
 
 	tx = tx.Select(`
 		distinct
 		a.id as id,
 		a.name as name,
-		Count(cm.id) as completed_module,
-		Count(cn.id) as total_module,
-		Count(b.user_id) as total_student
-	`)
+		ifnull(c.students, 0) total_student,
+		b.modul_aktif completed_module,
+		b.modul_total total_module
 
-	tx = tx.Where("a.name LIKE ?", "%"+page.Search+"%")
+	`).Table("class_hdr a").
+		Joins("left Join (?) b on b.class_id = a.id", courseSub).
+		Joins("left Join (?) c on c.class_id = a.id", studentSub)
 
 	if err1 := tx.Count(&totalData).Error; err1 != nil {
 		return nil, nil, err1
