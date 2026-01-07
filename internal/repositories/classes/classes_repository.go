@@ -32,6 +32,7 @@ type IClassesRepository interface {
 	InsertBulkCourseClass(model []classes_model.ClassCourse) error
 	GetAllClassCourses(model classes_model.ClassCourse) ([]map[string]interface{}, error)
 	GetInformDashboardClass(idClass int, teacherId int) (map[string]interface{}, error)
+	GetAllModulByClassAndRole(idClass int, teacherId int) ([]map[string]interface{}, error)
 }
 
 func NewClassesRepos(db *database.DBManager) IClassesRepository {
@@ -395,6 +396,35 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 		Joins("left Join (?) d on d.class_id = a.id", assigmentSub).Where("a.id = ?", idClass).Scan(&data)
 
 	if err := tx.Error; err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (r *classesRepository) GetAllModulByClassAndRole(idClass int, teacherId int) ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+
+	tx := r.getDB().Table("class_course a")
+
+	tx = tx.Select(`
+		b.id,
+		c.title as courses,
+		d.title name,
+		b.status
+	`)
+
+	tx = tx.Joins(`join class_module b on b.class_id = a.class_id and b.class_course_id = a.id`)
+	tx = tx.Joins(`join courses c on c.id = a.course_id`)
+	tx = tx.Joins(`join course_modules d on d.id = b.module_id`)
+
+	tx = tx.Where("a.class_id = ?", idClass)
+
+	if teacherId != 0 {
+		tx = tx.Where("a.teacher_id = ?", teacherId)
+	}
+
+	if err := tx.Scan(&data).Error; err != nil {
 		return nil, err
 	}
 

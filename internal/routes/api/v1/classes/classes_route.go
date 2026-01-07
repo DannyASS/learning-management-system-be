@@ -43,5 +43,6 @@ func ClassesRoute(router fiber.Router, db *database.DBManager, cfg *config.Confi
 	dashboard := router.Group("/dashboard")
 	{
 		dashboard.Get("/class/inform/:id", handler.GetInformDasboardClass)
+		dashboard.Get("/class/module/:id", handler.GetAllModulByClassAndRole)
 	}
 }
