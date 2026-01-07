@@ -12,6 +12,7 @@ import (
 	import_repository "github.com/DannyAss/users/internal/repositories/import"
 	jobs "github.com/DannyAss/users/internal/worker/job"
 	job_excel "github.com/DannyAss/users/internal/worker/job/excel"
+	"github.com/DannyAss/users/pkg/utils"
 )
 
 type classUsecase struct {
@@ -218,5 +219,28 @@ func (c *classUsecase) GetInformDashboardClass(id int, teacherId int) (map[strin
 		return nil, fmt.Errorf("%w : %s", InternalServerError, err.Error())
 	}
 
-	return data, nil
+	modulAktifAny := data["modul_aktif"]
+	modulTotalAny := data["modul_total"]
+
+	modulAktif, ok1 := utils.ToFloat64(modulAktifAny)
+	modulTotal, ok2 := utils.ToFloat64(modulTotalAny)
+
+	if !ok1 {
+		return nil, fmt.Errorf("%w : %s", InternalServerError, data["modul_aktif"])
+	}
+
+	if !ok2 {
+		return nil, fmt.Errorf("%w : %s", InternalServerError, data["modul_aktif"])
+	}
+
+	averageTotal := (float64(modulAktif) / float64(modulTotal)) * 100
+
+	result := map[string]interface{}{
+		"courses":     data["courses"],
+		"students":    data["students"],
+		"assignments": data["assignments"],
+		"average":     averageTotal,
+	}
+
+	return result, nil
 }

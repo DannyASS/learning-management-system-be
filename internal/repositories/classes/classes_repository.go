@@ -386,8 +386,8 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 		ifnull(b.courses, 0) courses,
 		ifnull(c.students, 0) students,
 		ifnull(d.assignments, 0) assignments,
-		b.modul_aktif,
-		b.modul_total
+		ifnull(b.modul_aktif, 0) modul_aktif,
+		ifnull(b.modul_total, 0) modul_total
 
 	`).Table("class_hdr a").
 		Joins("left Join (?) b on b.class_id = a.id", courseSub).

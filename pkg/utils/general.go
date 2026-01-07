@@ -101,3 +101,20 @@ func CookieConfig(env, domain string, value string) fiber.Cookie {
 		Domain: domain,
 	}
 }
+
+func ToFloat64(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case float32:
+		return float64(n), true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case int32:
+		return float64(n), true
+	default:
+		return 0, false
+	}
+}

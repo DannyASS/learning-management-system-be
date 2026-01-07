@@ -375,7 +375,7 @@ func (ctrl *ClassesHandler) GetInformDasboardClass(c *fiber.Ctx) error {
 		data, err := ctrl.uc.GetInformDashboardClass(int(idUint), teacherId)
 		if err != nil {
 
-			if errors.Is(classes_usecase.InternalServerError, err) {
+			if errors.Is(err, classes_usecase.InternalServerError) {
 				return presentation.Response[any]().
 					SetErrorCode("500").SetStatusCode(500).
 					SetErrorDetail(err.Error()).
