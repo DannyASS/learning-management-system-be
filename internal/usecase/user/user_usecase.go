@@ -236,7 +236,7 @@ func (u *userUsecase) RefreshToken(userToken string) (*user_model.LoginResponse,
 	}
 
 	filterUser := user_model.FilterUser{
-		Id: uint64(getUserId.UserID),
+		UserId: uint64(getUserId.UserID),
 	}
 
 	user, err1 := u.userRepo.GetUser(filterUser, "")

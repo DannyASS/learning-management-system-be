@@ -31,6 +31,7 @@ type FilterUser struct {
 	Email      string `json:"email"`
 	Phone      string `json:"phone"`
 	IsVerified bool   `json:"is_verified"`
+	UserId     uint64 `json:"user_id"`
 }
 
 type UserRole struct {
