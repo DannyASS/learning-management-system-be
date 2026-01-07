@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/DannyAss/users/config"
@@ -15,7 +16,7 @@ type JWTClaims struct {
 	UserID  uint   `json:"uid"`
 	Name    string `json:"name"`
 	Email   string `json:"email,omitempty"`
-	RoleIds []uint `json:"role_ids,omitempty"`
+	RoleIds uint   `json:"role_ids,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -30,7 +31,7 @@ func NewAuthUsecase(cfg *config.ConfigEnv) AuthUsecase {
 	return &authUsecase{cfg: cfg}
 }
 
-func GenerateAccessToken(secret []byte, userID uint, email, name string, role_ids []uint, ttl time.Duration) (string, time.Time, error) {
+func GenerateAccessToken(secret []byte, userID uint, email, name string, role_ids uint, ttl time.Duration) (string, time.Time, error) {
 	now := time.Now()
 	exp := now.Add(ttl)
 	claims := JWTClaims{
@@ -53,19 +54,22 @@ func GenerateAccessToken(secret []byte, userID uint, email, name string, role_id
 func VerifyAccessToken(secret []byte, tokenStr string) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &JWTClaims{}, func(t *jwt.Token) (any, error) {
 		if t.Method != jwt.SigningMethodHS256 {
+			fmt.Println("cek 1")
 			return nil, errors.New("unexpected signing method")
 		}
 		return secret, nil
 	})
 
 	if err != nil {
+		fmt.Println("cek 2")
+		fmt.Println(err.Error())
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
 		return claims, nil
 	}
-
+	fmt.Println("cek 3")
 	return nil, errors.New("invalid token")
 }
 

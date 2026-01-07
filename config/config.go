@@ -80,16 +80,20 @@ func InitConfig() *ConfigEnv {
 		log.Fatalf("Error reading .env file, %s", err)
 	}
 	viper.AutomaticEnv()
-	appKey := getAppKey()
-	log.Printf("🔑 Using APP_KEY: '%s' (length: %d)",
-		maskKey(appKey), len(appKey))
+
 	conenv.DBConnnect = DBLoad()
 	if err := viper.Unmarshal(&conenv); err != nil {
 		log.Fatalf("Unable to decode into struct, %v", err)
 	}
 
-	if runtime.GOOS != "windows" {
-		conenv.AppKey = "$zE" + conenv.AppKey
+	if conenv.AppEnv != "local" {
+		appKey := getAppKey()
+		log.Printf("🔑 Using APP_KEY: '%s' (length: %d)",
+			maskKey(appKey), len(appKey))
+
+		if runtime.GOOS != "windows" {
+			conenv.AppKey = "$zE" + conenv.AppKey
+		}
 	}
 	log.Println(conenv.DBConnnect.DBMaster)
 	return &conenv

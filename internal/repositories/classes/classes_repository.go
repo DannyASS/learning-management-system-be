@@ -31,6 +31,7 @@ type IClassesRepository interface {
 	DeleteStudentByIdCLass(id uint64) error
 	InsertBulkCourseClass(model []classes_model.ClassCourse) error
 	GetAllClassCourses(model classes_model.ClassCourse) ([]map[string]interface{}, error)
+	GetInformDashboardClass(idClass int, teacherId int) (map[string]interface{}, error)
 }
 
 func NewClassesRepos(db *database.DBManager) IClassesRepository {
@@ -298,26 +299,45 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 
 	tx := c.getDB()
 
+	moduleAktifSub := c.getDB().Select(`
+		class_id,
+		class_course_id,
+		count(*) modules
+	`).Table("class_module").
+		Where("status = ?", "completed").
+		Group("class_id, class_course_id")
+
+	moduleTotalSub := c.getDB().Select(`
+		class_id,
+		class_course_id,
+		count(*) modules
+	`).Table("class_module").
+		Group("class_id, class_course_id")
+
 	courseSub := c.getDB().
 		Select(`
-			class_id,
-			count(*) courses
+			b1.class_id,
+			count(b1.id) courses,
+			b2.modules modul_aktif,
+			b3.modules modul_total
 		`).
-		Model(&classes_model.ClassCourse{}).
-		Group("class_id")
+		Table("class_course b1").
+		Joins("join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
+		Joins("join (?) b3 on b1.class_id = b2.class_id and b1.id = b3.class_course_id", moduleTotalSub).
+		Group("class_id, b2.modules, b3.modules")
 
 	studentSub := c.getDB().
 		Select(`
 			class_id,
 			count(*) students
 		`).
-		Model(&classes_model.ClassStudent{}).
+		Table("class_student").
 		Group("class_id")
 
 	assigmentSub := c.getDB().
 		Select(`
 			class_id,
-			count(*) assigments
+			count(*) assignments
 		`).
 		Model(&classes_model.ClassAssignment{}).
 		Where("status = ?", "active").
@@ -328,13 +348,16 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 	}
 
 	tx = tx.Select(`
-		b.courses,
-		c.students,
-		d.assigments
+		ifnull(b.courses, 0) courses,
+		ifnull(c.students, 0) students,
+		ifnull(d.assignments, 0) assignments,
+		b.modul_aktif,
+		b.modul_total
+
 	`).Table("class_hdr a").
-		Joins("Join (?) b on b.class_id = a.id", courseSub).
-		Joins("Join (?) c on c.class_id = a.id", studentSub).
-		Joins("Join (?) d on d.class_id = a.id", assigmentSub).Scan(&data)
+		Joins("left Join (?) b on b.class_id = a.id", courseSub).
+		Joins("left Join (?) c on c.class_id = a.id", studentSub).
+		Joins("left Join (?) d on d.class_id = a.id", assigmentSub).Where("a.id = ?", idClass).Scan(&data)
 
 	if err := tx.Error; err != nil {
 		return nil, err

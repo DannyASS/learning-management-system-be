@@ -2,6 +2,7 @@ package classes_handler
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"strconv"
 
@@ -318,6 +319,65 @@ func (ctrl *ClassesHandler) GetCOurseClassByIDClass(c *fiber.Ctx) error {
 				SetErrorCode("422").SetStatusCode(422).
 				SetErrorDetail(err.Error()).
 				Json(c)
+		}
+
+		return presentation.Response[any]().
+			SetStatus(true).
+			SetStatusCode(200).
+			SetData(data).
+			Json(c)
+	})
+}
+
+func (ctrl *ClassesHandler) GetInformDasboardClass(c *fiber.Ctx) error {
+	return utils.TryCatch(c, func() error {
+		id := c.Params("id")
+		idUint, err1 := strconv.ParseUint(id, 10, 64)
+		if err1 != nil {
+			return presentation.Response[any]().
+				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail(err1.Error()).
+				Json(c)
+		}
+
+		roleLocal := c.Locals("roleIDs")
+		roleIds, ok := roleLocal.(uint)
+		if !ok {
+			return presentation.Response[any]().
+				SetErrorCode("401").SetStatusCode(401).
+				SetErrorDetail("role ditolak").
+				Json(c)
+		}
+
+		teacherId := 0
+
+		if roleIds != 3 {
+			userId, cek := c.Locals("userID").(uint)
+			if !cek {
+				return presentation.Response[any]().
+					SetErrorCode("401").SetStatusCode(401).
+					SetErrorDetail("user Id ditolak").
+					Json(c)
+			}
+
+			teacherId = int(userId)
+		}
+
+		data, err := ctrl.uc.GetInformDashboardClass(int(idUint), teacherId)
+		if err != nil {
+
+			if errors.Is(classes_usecase.InternalServerError, err) {
+				return presentation.Response[any]().
+					SetErrorCode("500").SetStatusCode(500).
+					SetErrorDetail(err.Error()).
+					Json(c)
+			} else {
+				return presentation.Response[any]().
+					SetErrorCode("422").SetStatusCode(422).
+					SetErrorDetail(err.Error()).
+					Json(c)
+			}
+
 		}
 
 		return presentation.Response[any]().

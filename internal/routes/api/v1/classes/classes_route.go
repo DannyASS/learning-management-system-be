@@ -39,4 +39,9 @@ func ClassesRoute(router fiber.Router, db *database.DBManager, cfg *config.Confi
 		courses.Get("/template/download", handler.DownloadTemplateCourse)
 		courses.Get("/class/:id", handler.GetCOurseClassByIDClass)
 	}
+
+	dashboard := router.Group("/dashboard")
+	{
+		dashboard.Get("/class/inform/:id", handler.GetInformDasboardClass)
+	}
 }

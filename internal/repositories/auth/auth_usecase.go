@@ -15,7 +15,7 @@ type JWTClaims struct {
 	UserID  uint   `json:"uid"`
 	Name    string `json:"name"`
 	Email   string `json:"email,omitempty"`
-	RoleIds []uint `json:"role_ids,omitempty"`
+	RoleIds uint   `json:"role_ids,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -30,7 +30,7 @@ func NewAuthUsecase(cfg *config.ConfigEnv) AuthUsecase {
 	return &authUsecase{cfg: cfg}
 }
 
-func GenerateAccessToken(secret []byte, userID uint, email, name string, role_ids []uint, ttl time.Duration) (string, time.Time, error) {
+func GenerateAccessToken(secret []byte, userID uint, email, name string, role_ids uint, ttl time.Duration) (string, time.Time, error) {
 	now := time.Now()
 	exp := now.Add(ttl)
 	claims := JWTClaims{

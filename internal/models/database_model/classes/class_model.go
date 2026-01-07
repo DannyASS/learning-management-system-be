@@ -124,7 +124,7 @@ type ClassAssignment struct {
 }
 
 func (ClassAssignment) TableName() string {
-	return "class_assigment"
+	return "class_assignment"
 }
 
 type ClassHDRRequest struct {

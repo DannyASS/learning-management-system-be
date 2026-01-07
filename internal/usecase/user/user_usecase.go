@@ -164,14 +164,14 @@ func (u *userUsecase) Login(login user_model.LoginDTO) (*user_model.LoginRespons
 
 	// GENERATE ACCESS TOKEN
 	accessTTL := 15 * time.Minute
-	rolesId := []uint{uint(roleId.ID)}
+	rolesId := roleId.ID
 
 	access, _, err := auth_usercase.GenerateAccessToken(
 		[]byte(u.cfg.JWTSecretKey),
 		uint(user.ID),
 		string(uEmail),
 		user.Username,
-		rolesId,
+		uint(rolesId),
 		accessTTL,
 	)
 	if err != nil {
@@ -245,7 +245,7 @@ func (u *userUsecase) RefreshToken(userToken string) (*user_model.LoginResponse,
 	}
 	email, _ := u.crypto.Decrypt(user.Email)
 
-	var rolesId []uint
+	var rolesId uint
 
 	getRolesId, err2 := u.userRepo.GetListUserRoles(filterUser)
 
@@ -253,10 +253,7 @@ func (u *userUsecase) RefreshToken(userToken string) (*user_model.LoginResponse,
 		return nil, err2
 	}
 
-	for _, c := range getRolesId {
-		roleId := uint(c.RoleID)
-		rolesId = append(rolesId, roleId)
-	}
+	rolesId = uint(getRolesId[0].ID)
 
 	accessTTL := time.Duration(15) * time.Minute
 	accessToken, _, err3 := auth_usercase.GenerateAccessToken([]byte(u.cfg.JWTSecretKey), uint(user.ID), string(email), user.Username, rolesId, accessTTL)

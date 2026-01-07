@@ -1,6 +1,7 @@
 package classes_usecase
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/DannyAss/users/internal/database"
@@ -20,6 +21,11 @@ type classUsecase struct {
 	db    *database.DBManager
 }
 
+var (
+	InternalServerError = errors.New("Internal Server Error")
+	UnprocessableEntity = errors.New("Unprocessable Entity")
+)
+
 type IClassesUsecase interface {
 	GetListClassesPage(req classes_model.ClassHDRRequest) (*map[string]interface{}, error)
 	CreateClass(req classes_model.ClassHdrDTO) error
@@ -31,6 +37,7 @@ type IClassesUsecase interface {
 	GetStudentClassByIDClass(id uint64) ([]classes_model.ClassStudent, error)
 	GetAvailableCourseCLass() (*courses_model.AvailableCourse, error)
 	GetAllCourseClass(id uint64) ([]map[string]interface{}, error)
+	GetInformDashboardClass(id int, teacherId int) (map[string]interface{}, error)
 }
 
 func NewClassesUsecase(repo classes_repository.IClassesRepository, irepo import_repository.IImportRepository, db *database.DBManager, crepo courses_repository.ICourseRepos) IClassesUsecase {
@@ -195,6 +202,20 @@ func (c *classUsecase) GetAllCourseClass(id uint64) ([]map[string]interface{}, e
 
 	if err != nil {
 		return nil, err
+	}
+
+	return data, nil
+}
+
+func (c *classUsecase) GetInformDashboardClass(id int, teacherId int) (map[string]interface{}, error) {
+
+	if id == 0 {
+		return nil, fmt.Errorf("%w : %s", UnprocessableEntity, "Id kelas tidak boleh 0 atau kosong")
+	}
+	data, err := c.repo.GetInformDashboardClass(id, teacherId)
+
+	if err != nil {
+		return nil, fmt.Errorf("%w : %s", InternalServerError, err.Error())
 	}
 
 	return data, nil
