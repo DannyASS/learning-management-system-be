@@ -225,6 +225,8 @@ func (c *classUsecase) GetInformDashboardClass(id int, teacherId int) (map[strin
 	modulAktif, ok1 := utils.ToFloat64(modulAktifAny)
 	modulTotal, ok2 := utils.ToFloat64(modulTotalAny)
 
+	var averageTotal float64
+
 	if !ok1 {
 		return nil, fmt.Errorf("%w : %s", InternalServerError, data["modul_aktif"])
 	}
@@ -233,7 +235,11 @@ func (c *classUsecase) GetInformDashboardClass(id int, teacherId int) (map[strin
 		return nil, fmt.Errorf("%w : %s", InternalServerError, data["modul_aktif"])
 	}
 
-	averageTotal := (float64(modulAktif) / float64(modulTotal)) * 100
+	if modulTotal != 0 {
+		averageTotal = (float64(modulAktif) / float64(modulTotal)) * 100
+	} else {
+		averageTotal = 0
+	}
 
 	result := map[string]interface{}{
 		"courses":     data["courses"],
