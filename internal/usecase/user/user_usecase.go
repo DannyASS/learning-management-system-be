@@ -236,7 +236,7 @@ func (u *userUsecase) RefreshToken(userToken string) (*user_model.LoginResponse,
 	}
 
 	filterUser := user_model.FilterUser{
-		UserId: uint64(getUserId.UserID),
+		Id: uint64(getUserId.UserID),
 	}
 
 	user, err1 := u.userRepo.GetUser(filterUser, "")
@@ -246,6 +246,10 @@ func (u *userUsecase) RefreshToken(userToken string) (*user_model.LoginResponse,
 	email, _ := u.crypto.Decrypt(user.Email)
 
 	var rolesId uint
+
+	filterUser = user_model.FilterUser{
+		UserId: user.ID,
+	}
 
 	getRolesId, err2 := u.userRepo.GetListUserRoles(filterUser)
 
