@@ -385,6 +385,7 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 	}
 
 	tx = tx.Select(`
+		a.name,
 		ifnull(b.courses, 0) courses,
 		ifnull(c.students, 0) students,
 		ifnull(d.assignments, 0) assignments,
