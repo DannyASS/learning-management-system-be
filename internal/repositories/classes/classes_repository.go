@@ -356,9 +356,9 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 	courseSub := c.getDB().
 		Select(`
 			b1.class_id,
-			count(b1.id) courses,
-			ifnull(b2.modules, 0) modul_aktif,
-			ifnull(b3.modules, 0) modul_total,
+			count(b1.id) as courses,
+			ifnull(b2.modules, 0) as modul_aktif,
+			ifnull(b3.modules, 0) as modul_total,
 			b1.teacher_id
 		`).
 		Table("class_course b1").
