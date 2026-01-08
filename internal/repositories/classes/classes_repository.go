@@ -443,6 +443,8 @@ func (r *classesRepository) GetAvailableModulDash(idClass int, teacherId int) ([
 		Where("da.course_id = a.course_id")
 
 	tx = tx.Select(`
+		c.id as moduleId,
+		b.id as courseId,
 		b.title as course,
 		c.title as module
 	`).
