@@ -40,6 +40,7 @@ type IClassesUsecase interface {
 	GetAllCourseClass(id uint64) ([]map[string]interface{}, error)
 	GetInformDashboardClass(id int, teacherId int) (map[string]interface{}, error)
 	GetAllModulByClassAndRole(classId int, teacherId int) ([]map[string]interface{}, error)
+	GetAvailableModulDash(classId int, teacherId int) ([]map[string]interface{}, error)
 }
 
 func NewClassesUsecase(repo classes_repository.IClassesRepository, irepo import_repository.IImportRepository, db *database.DBManager, crepo courses_repository.ICourseRepos) IClassesUsecase {
@@ -258,6 +259,19 @@ func (c *classUsecase) GetAllModulByClassAndRole(classId int, teacherId int) ([]
 	}
 
 	data, err := c.repo.GetAllModulByClassAndRole(classId, teacherId)
+	if err != nil {
+		return nil, fmt.Errorf("%w : %s", InternalServerError, err.Error())
+	}
+
+	return data, nil
+}
+
+func (c *classUsecase) GetAvailableModulDash(classId int, teacherId int) ([]map[string]interface{}, error) {
+	if classId == 0 {
+		return nil, fmt.Errorf("%w : %s", UnprocessableEntity, "Class Id tidak boleh kosong")
+	}
+
+	data, err := c.repo.GetAvailableModulDash(classId, teacherId)
 	if err != nil {
 		return nil, fmt.Errorf("%w : %s", InternalServerError, err.Error())
 	}

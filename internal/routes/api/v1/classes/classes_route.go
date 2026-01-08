@@ -44,5 +44,6 @@ func ClassesRoute(router fiber.Router, db *database.DBManager, cfg *config.Confi
 	{
 		dashboard.Get("/class/inform/:id", handler.GetInformDasboardClass)
 		dashboard.Get("/class/module/:id", handler.GetAllModulByClassAndRole)
+		dashboard.Get("/class/module/avail/:id", handler.GetAvailableModulDash)
 	}
 }

@@ -33,6 +33,7 @@ type IClassesRepository interface {
 	GetAllClassCourses(model classes_model.ClassCourse) ([]map[string]interface{}, error)
 	GetInformDashboardClass(idClass int, teacherId int) (map[string]interface{}, error)
 	GetAllModulByClassAndRole(idClass int, teacherId int) ([]map[string]interface{}, error)
+	GetAvailableModulDash(idClass int, teacherId int) ([]map[string]interface{}, error)
 }
 
 func NewClassesRepos(db *database.DBManager) IClassesRepository {
@@ -423,6 +424,33 @@ func (r *classesRepository) GetAllModulByClassAndRole(idClass int, teacherId int
 	if teacherId != 0 {
 		tx = tx.Where("a.teacher_id = ?", teacherId)
 	}
+
+	if err := tx.Scan(&data).Error; err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (r *classesRepository) GetAvailableModulDash(idClass int, teacherId int) ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+
+	tx := r.getDB().Table("class_course a")
+
+	courseSUb := r.getDB().Select("db.module_id").Table("class_course da").
+		Joins("join class_module db on da.class_id = db.class_id and db.class_course_id = da.id").
+		Where("da.class_id = a.class_id").
+		Where("da.course_id = a.course_id")
+
+	tx = tx.Select(`
+		b.title as course,
+		c.title as module
+	`).
+		Joins("join courses b on a.course_id = b.id").
+		Joins("join course_modules c on c.course_id = a.course_id").
+		Where("c.id not in (?)", courseSUb).
+		Where("a.teacher_id = ?", teacherId).
+		Where("a.class_id = ?", idClass)
 
 	if err := tx.Scan(&data).Error; err != nil {
 		return nil, err
