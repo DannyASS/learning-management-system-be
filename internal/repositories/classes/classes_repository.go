@@ -32,8 +32,10 @@ type IClassesRepository interface {
 	InsertBulkCourseClass(model []classes_model.ClassCourse) error
 	GetAllClassCourses(model classes_model.ClassCourse) ([]map[string]interface{}, error)
 	GetInformDashboardClass(idClass int, teacherId int) (map[string]interface{}, error)
-	GetAllModulByClassAndRole(idClass int, teacherId int) ([]map[string]interface{}, error)
+	GetAllModulByClassAndRole(idClass int, teacherId int, page classes_model.Pagination) ([]map[string]interface{}, *classes_model.Pagination, error)
 	GetAvailableModulDash(idClass int, teacherId int) ([]map[string]interface{}, error)
+	DataAddModulDash(idClass int, teacherId int, moduleId []int) ([]map[string]interface{}, error)
+	InsertBulkModule(model []classes_model.ClassModule) error
 }
 
 func NewClassesRepos(db *database.DBManager) IClassesRepository {
@@ -404,8 +406,11 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 	return data, nil
 }
 
-func (r *classesRepository) GetAllModulByClassAndRole(idClass int, teacherId int) ([]map[string]interface{}, error) {
-	var data []map[string]interface{}
+func (r *classesRepository) GetAllModulByClassAndRole(idClass int, teacherId int, page classes_model.Pagination) ([]map[string]interface{}, *classes_model.Pagination, error) {
+	var (
+		data      []map[string]interface{}
+		totalData int64
+	)
 
 	tx := r.getDB().Table("class_course a")
 
@@ -426,11 +431,18 @@ func (r *classesRepository) GetAllModulByClassAndRole(idClass int, teacherId int
 		tx = tx.Where("a.teacher_id = ?", teacherId)
 	}
 
-	if err := tx.Scan(&data).Error; err != nil {
-		return nil, err
+	if errTotal := tx.Count(&totalData).Error; errTotal != nil {
+		return nil, nil, errTotal
 	}
 
-	return data, nil
+	if err := tx.Limit(page.Perpage).Offset((page.Page - 1) * page.Perpage).Scan(&data).Error; err != nil {
+		return nil, nil, err
+	}
+
+	page.TotalPage = int(math.Ceil(float64(totalData) / float64(page.Perpage)))
+	page.TotalData = int(totalData)
+
+	return data, &page, nil
 }
 
 func (r *classesRepository) GetAvailableModulDash(idClass int, teacherId int) ([]map[string]interface{}, error) {
@@ -460,4 +472,37 @@ func (r *classesRepository) GetAvailableModulDash(idClass int, teacherId int) ([
 	}
 
 	return data, nil
+}
+
+func (r *classesRepository) DataAddModulDash(idClass int, teacherId int, moduleId []int) ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+
+	tx := r.getDB().Debug().Table("class_hdr a")
+	tx = tx.Select(`
+		a.id as class_id,
+		c.id as module_id,
+		c.title as module_name,
+		b.id as class_course_id
+	`).
+		Joins(`join class_course b on a.id = b.class_id`).
+		Joins(`join course_modules c on c.course_id = b.course_id`).
+		Where(`b.teacher_id = ?`, teacherId).
+		Where(`a.id = ?`, idClass).
+		Where(`c.id in (?)`, moduleId)
+
+	if err := tx.Scan(&data).Error; err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (r *classesRepository) InsertBulkModule(model []classes_model.ClassModule) error {
+	tx := r.getDB()
+
+	if err := tx.CreateInBatches(&model, 10).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

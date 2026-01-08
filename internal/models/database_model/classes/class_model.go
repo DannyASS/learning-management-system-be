@@ -62,11 +62,12 @@ type ClassModule struct {
 	ModuleName string `json:"module_name"`
 	Status     string `json:"status"`
 
-	CreatedAt time.Time  `json:"created_at"`
-	CreatedBy string     `json:"created_by"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	UpdatedBy string     `json:"updated_by"`
-	DeletedAt *time.Time `gorm:"index" json:"deleted_at"`
+	CreatedAt     time.Time  `json:"created_at"`
+	CreatedBy     string     `json:"created_by"`
+	UpdatedAt     *time.Time `json:"updated_at"`
+	UpdatedBy     string     `json:"updated_by"`
+	DeletedAt     *time.Time `gorm:"index" json:"deleted_at"`
+	ClassCourseId uint       `gorm:"column:class_course_id" json:"class_course_id"`
 
 	ClassHdr     *ClassHdr     `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 	CourseModule *CourseModule `gorm:"foreignKey:ModuleID" json:"module,omitempty"`
@@ -188,4 +189,14 @@ type DashBoardInformation struct {
 	TotalCourses        int64 `json:"total_course"`
 	ActiveAssigment     int64 `json:"active_assigment"`
 	TotalCompliteCourse int64 `json:"total_compliteCourse"`
+}
+
+type Pagination struct {
+	Search    string `query:"search"`
+	SortBy    string `query:"sort_by"`
+	SortType  string `query:"sort_type"`
+	Page      int    `query:"page"`
+	Perpage   int    `query:"perpage"`
+	TotalData int    `query:"total_data"`
+	TotalPage int    `query:"total_page"`
 }

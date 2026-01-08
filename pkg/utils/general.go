@@ -112,9 +112,16 @@ func ToFloat64(v interface{}) (float64, bool) {
 		return float64(n), true
 	case int64:
 		return float64(n), true
+	case uint:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
 	case int32:
 		return float64(n), true
+	case uint32:
+		return float64(n), true
 	default:
+		fmt.Printf("tipe: %T\n", v)
 		return 0, false
 	}
 }

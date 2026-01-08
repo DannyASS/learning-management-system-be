@@ -39,8 +39,9 @@ type IClassesUsecase interface {
 	GetAvailableCourseCLass() (*courses_model.AvailableCourse, error)
 	GetAllCourseClass(id uint64) ([]map[string]interface{}, error)
 	GetInformDashboardClass(id int, teacherId int) (map[string]interface{}, error)
-	GetAllModulByClassAndRole(classId int, teacherId int) ([]map[string]interface{}, error)
+	GetAllModulByClassAndRole(classId int, teacherId int, page classes_model.Pagination) (map[string]interface{}, error)
 	GetAvailableModulDash(classId int, teacherId int) ([]map[string]interface{}, error)
+	AddModulDash(classId int, teacherId int, ModuleId []int, createdBy string) error
 }
 
 func NewClassesUsecase(repo classes_repository.IClassesRepository, irepo import_repository.IImportRepository, db *database.DBManager, crepo courses_repository.ICourseRepos) IClassesUsecase {
@@ -254,17 +255,33 @@ func (c *classUsecase) GetInformDashboardClass(id int, teacherId int) (map[strin
 	return result, nil
 }
 
-func (c *classUsecase) GetAllModulByClassAndRole(classId int, teacherId int) ([]map[string]interface{}, error) {
+func (c *classUsecase) GetAllModulByClassAndRole(classId int, teacherId int, page classes_model.Pagination) (map[string]interface{}, error) {
 	if classId == 0 {
 		return nil, fmt.Errorf("%w : %s", UnprocessableEntity, "Class Id tidak boleh kosong")
 	}
 
-	data, err := c.repo.GetAllModulByClassAndRole(classId, teacherId)
+	if page.Page < 1 {
+		page.Page = 1
+	}
+
+	if page.Perpage < 1 {
+		page.Perpage = 10
+	}
+
+	data, pagination, err := c.repo.GetAllModulByClassAndRole(classId, teacherId, page)
 	if err != nil {
 		return nil, fmt.Errorf("%w : %s", InternalServerError, err.Error())
 	}
 
-	return data, nil
+	response := map[string]interface{}{
+		"data":      data,
+		"page":      pagination.Page,
+		"perpage":   pagination.Perpage,
+		"totalData": pagination.TotalData,
+		"totalPage": pagination.TotalPage,
+	}
+
+	return response, nil
 }
 
 func (c *classUsecase) GetAvailableModulDash(classId int, teacherId int) ([]map[string]interface{}, error) {
@@ -278,4 +295,65 @@ func (c *classUsecase) GetAvailableModulDash(classId int, teacherId int) ([]map[
 	}
 
 	return data, nil
+}
+
+func (c *classUsecase) AddModulDash(classId int, teacherId int, ModuleId []int, createdBy string) error {
+	tx := c.db.GetDB().Begin()
+	repo := c.repo.WithTx(tx)
+	isRollBack := false
+
+	defer func() {
+		if isRollBack {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+
+	dataInsert, err1 := repo.DataAddModulDash(classId, teacherId, ModuleId)
+	if err1 != nil {
+		isRollBack = true
+		return fmt.Errorf("%w : %s", InternalServerError, err1.Error())
+	}
+
+	var model = []classes_model.ClassModule{}
+
+	fmt.Println("cek data query :", dataInsert)
+
+	for _, c := range dataInsert {
+		classId, ok := c["class_id"].(uint64)
+		if !ok {
+			isRollBack = true
+			return fmt.Errorf("%w : %s", InternalServerError, "classId is not int")
+		}
+		module, ok1 := utils.ToFloat64(c["module_id"])
+		if !ok1 {
+			isRollBack = true
+			return fmt.Errorf("%w : %s", InternalServerError, " module is not int")
+		}
+		classCourseId, ok2 := utils.ToFloat64(c["class_course_id"])
+		if !ok2 {
+			isRollBack = true
+			return fmt.Errorf("%w : %s", InternalServerError, " Class course id is not int")
+		}
+		dto := classes_model.ClassModule{
+			ClassID:       classId,
+			ModuleID:      uint(module),
+			ModuleName:    c["module_name"].(string),
+			ClassCourseId: uint(classCourseId),
+			CreatedBy:     createdBy,
+			Status:        "not_started",
+		}
+
+		model = append(model, dto)
+	}
+
+	fmt.Println("cek data convert :", model)
+
+	if err2 := repo.InsertBulkModule(model); err2 != nil {
+		isRollBack = true
+		return err2
+	}
+
+	return nil
 }

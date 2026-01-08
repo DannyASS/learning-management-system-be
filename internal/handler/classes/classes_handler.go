@@ -399,8 +399,17 @@ func (ctrl *ClassesHandler) GetInformDasboardClass(c *fiber.Ctx) error {
 
 func (ctrl *ClassesHandler) GetAllModulByClassAndRole(c *fiber.Ctx) error {
 	return utils.TryCatch(c, func() error {
+		var page classes_model.Pagination
 		id := c.Params("id")
 		idUint, err1 := strconv.ParseUint(id, 10, 64)
+
+		if errParse := c.QueryParser(&page); errParse != nil {
+			return presentation.Response[any]().
+				SetErrorCode("500").SetStatusCode(500).
+				SetErrorDetail(errParse.Error()).
+				Json(c)
+		}
+
 		if err1 != nil {
 			return presentation.Response[any]().
 				SetErrorCode("422").SetStatusCode(422).
@@ -431,7 +440,7 @@ func (ctrl *ClassesHandler) GetAllModulByClassAndRole(c *fiber.Ctx) error {
 			teacherId = int(userId)
 		}
 
-		data, err := ctrl.uc.GetAllModulByClassAndRole(int(idUint), teacherId)
+		data, err := ctrl.uc.GetAllModulByClassAndRole(int(idUint), teacherId, page)
 		if err != nil {
 
 			if errors.Is(err, classes_usecase.InternalServerError) {
@@ -511,6 +520,73 @@ func (ctrl *ClassesHandler) GetAvailableModulDash(c *fiber.Ctx) error {
 			SetStatus(true).
 			SetStatusCode(200).
 			SetData(data).
+			Json(c)
+	})
+}
+
+func (ctrl *ClassesHandler) AddModulDash(c *fiber.Ctx) error {
+	return utils.TryCatch(c, func() error {
+		var body map[string][]int
+		id := c.Params("id")
+		idUint, err1 := strconv.ParseUint(id, 10, 64)
+		if err1 != nil {
+			return presentation.Response[any]().
+				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail(err1.Error()).
+				Json(c)
+		}
+
+		if errParse := c.BodyParser(&body); errParse != nil {
+			return presentation.Response[any]().
+				SetErrorCode("500").SetStatusCode(500).
+				SetErrorDetail(errParse.Error()).
+				Json(c)
+		}
+
+		roleLocal := c.Locals("roleIDs")
+		roleIds, ok := roleLocal.(uint)
+		if !ok {
+			return presentation.Response[any]().
+				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail("role ditolak").
+				Json(c)
+		}
+
+		teacherId := 0
+
+		if roleIds != 3 {
+			userId, cek := c.Locals("userID").(uint)
+			if !cek {
+				return presentation.Response[any]().
+					SetErrorCode("422").SetStatusCode(422).
+					SetErrorDetail("user Id ditolak").
+					Json(c)
+			}
+
+			teacherId = int(userId)
+		}
+
+		err := ctrl.uc.AddModulDash(int(idUint), teacherId, body["module"], c.Locals("name").(string))
+		if err != nil {
+
+			if errors.Is(err, classes_usecase.InternalServerError) {
+				return presentation.Response[any]().
+					SetErrorCode("500").SetStatusCode(500).
+					SetErrorDetail(err.Error()).
+					Json(c)
+			} else {
+				return presentation.Response[any]().
+					SetErrorCode("422").SetStatusCode(422).
+					SetErrorDetail(err.Error()).
+					Json(c)
+			}
+
+		}
+
+		return presentation.Response[any]().
+			SetStatus(true).
+			SetStatusCode(200).
+			SetMessage("sukses menambahkan data").
 			Json(c)
 	})
 }
