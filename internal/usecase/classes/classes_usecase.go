@@ -244,6 +244,7 @@ func (c *classUsecase) GetInformDashboardClass(id int, teacherId int) (map[strin
 	}
 
 	result := map[string]interface{}{
+		"title":       data["name"],
 		"courses":     data["courses"],
 		"students":    data["students"],
 		"assignments": data["assignments"],
