@@ -361,8 +361,8 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 			b3.modules modul_total
 		`).
 		Table("class_course b1").
-		Joins("join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
-		Joins("join (?) b3 on b1.class_id = b2.class_id and b1.id = b3.class_course_id", moduleTotalSub).
+		Joins("left join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
+		Joins("left join (?) b3 on b1.class_id = b2.class_id and b1.id = b3.class_course_id", moduleTotalSub).
 		Group("class_id, b2.modules, b3.modules")
 
 	studentSub := c.getDB().
