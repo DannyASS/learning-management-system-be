@@ -358,8 +358,7 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 			b1.class_id,
 			count(b1.id) as courses,
 			ifnull(b2.modules, 0) as modul_aktif,
-			ifnull(b3.modules, 0) as modul_total,
-			b1.teacher_id
+			ifnull(b3.modules, 0) as modul_total
 		`).
 		Table("class_course b1").
 		Joins("left join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
@@ -392,16 +391,16 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 					bb.class_id,
 					sum(bb.courses) courses,
 					sum(bb.modul_aktif) modul_aktif,
-					sum(bb.modul_aktif) modul_aktif,
-				`).Group("bb.class_id, courses, modul_aktif, modul_aktif")
+					sum(bb.modul_total) modul_total
+				`).Group("bb.class_id")
 
 	tx = tx.Select(`
 		a.name,
 		ifnull(b.courses, 0) courses,
 		ifnull(c.students, 0) students,
 		ifnull(d.assignments, 0) assignments,
-		ifnull(b.modul_aktif, 0) modul_aktif,
-		ifnull(b.modul_total, 0) modul_total
+		CONVERT(ifnull(b.modul_aktif, 0), SIGNED) modul_aktif,
+		CONVERT(ifnull(b.modul_total, 0), SIGNED) modul_total
 
 	`).Table("class_hdr a").
 		Joins("left Join (?) b on b.class_id = a.id", courseSub).
