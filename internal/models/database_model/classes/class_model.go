@@ -64,7 +64,7 @@ type ClassModule struct {
 
 	CreatedAt     time.Time  `json:"created_at"`
 	CreatedBy     string     `json:"created_by"`
-	UpdatedAt     *time.Time `json:"updated_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 	UpdatedBy     string     `json:"updated_by"`
 	DeletedAt     *time.Time `gorm:"index" json:"deleted_at"`
 	ClassCourseId uint       `gorm:"column:class_course_id" json:"class_course_id"`

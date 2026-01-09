@@ -590,3 +590,42 @@ func (ctrl *ClassesHandler) AddModulDash(c *fiber.Ctx) error {
 			Json(c)
 	})
 }
+
+func (ctrl *ClassesHandler) UpdateModulDash(c *fiber.Ctx) error {
+	return utils.TryCatch(c, func() error {
+		body := map[string]interface{}{
+			"status": "",
+			"id":     0,
+		}
+
+		if errParse := c.BodyParser(&body); errParse != nil {
+			return presentation.Response[any]().
+				SetErrorCode("500").SetStatusCode(500).
+				SetErrorDetail(errParse.Error()).
+				Json(c)
+		}
+
+		err := ctrl.uc.UpdateModulDash(body, c.Locals("name").(string))
+		if err != nil {
+
+			if errors.Is(err, classes_usecase.InternalServerError) {
+				return presentation.Response[any]().
+					SetErrorCode("500").SetStatusCode(500).
+					SetErrorDetail(err.Error()).
+					Json(c)
+			} else {
+				return presentation.Response[any]().
+					SetErrorCode("422").SetStatusCode(422).
+					SetErrorDetail(err.Error()).
+					Json(c)
+			}
+
+		}
+
+		return presentation.Response[any]().
+			SetStatus(true).
+			SetStatusCode(200).
+			SetMessage("sukses mengubah data").
+			Json(c)
+	})
+}

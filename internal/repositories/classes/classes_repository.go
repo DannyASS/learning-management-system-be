@@ -36,6 +36,7 @@ type IClassesRepository interface {
 	GetAvailableModulDash(idClass int, teacherId int) ([]map[string]interface{}, error)
 	DataAddModulDash(idClass int, teacherId int, moduleId []int) ([]map[string]interface{}, error)
 	InsertBulkModule(model []classes_model.ClassModule) error
+	UpdateClassModule(model classes_model.ClassModule) error
 }
 
 func NewClassesRepos(db *database.DBManager) IClassesRepository {
@@ -509,6 +510,15 @@ func (r *classesRepository) InsertBulkModule(model []classes_model.ClassModule) 
 	tx := r.getDB()
 
 	if err := tx.CreateInBatches(&model, 10).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (r *classesRepository) UpdateClassModule(model classes_model.ClassModule) error {
+	tx := r.getDB()
+
+	if err := tx.Where("id = ?", model.ID).Updates(&model).Error; err != nil {
 		return err
 	}
 

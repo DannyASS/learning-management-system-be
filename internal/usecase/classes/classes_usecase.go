@@ -3,6 +3,7 @@ package classes_usecase
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/DannyAss/users/internal/database"
 	classes_model "github.com/DannyAss/users/internal/models/database_model/classes"
@@ -42,6 +43,7 @@ type IClassesUsecase interface {
 	GetAllModulByClassAndRole(classId int, teacherId int, page classes_model.Pagination) (map[string]interface{}, error)
 	GetAvailableModulDash(classId int, teacherId int) ([]map[string]interface{}, error)
 	AddModulDash(classId int, teacherId int, ModuleId []int, createdBy string) error
+	UpdateModulDash(data map[string]any, updatedBy string) error
 }
 
 func NewClassesUsecase(repo classes_repository.IClassesRepository, irepo import_repository.IImportRepository, db *database.DBManager, crepo courses_repository.ICourseRepos) IClassesUsecase {
@@ -353,6 +355,21 @@ func (c *classUsecase) AddModulDash(classId int, teacherId int, ModuleId []int, 
 	if err2 := repo.InsertBulkModule(model); err2 != nil {
 		isRollBack = true
 		return err2
+	}
+
+	return nil
+}
+func (c *classUsecase) UpdateModulDash(data map[string]any, updatedBy string) error {
+
+	model := classes_model.ClassModule{
+		ID:        uint(data["id"].(float64)),
+		Status:    data["status"].(string),
+		UpdatedBy: updatedBy,
+		UpdatedAt: time.Now(),
+	}
+
+	if err := c.repo.UpdateClassModule(model); err != nil {
+		return fmt.Errorf("%w : %s", InternalServerError, err.Error())
 	}
 
 	return nil
