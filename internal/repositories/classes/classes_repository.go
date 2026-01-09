@@ -87,8 +87,8 @@ func (c *classesRepository) GetListClassesPage(page classes_model.ClassHDRReques
 		`).
 		Table("class_course b1").
 		Joins("join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
-		Joins("join (?) b3 on b1.class_id = b2.class_id and b1.id = b3.class_course_id", moduleTotalSub).
-		Group("class_id, b2.modules, b3.modules")
+		Joins("join (?) b3 on b1.class_id = b3.class_id and b1.id = b3.class_course_id", moduleTotalSub).
+		Group("class_id, b1.id, b2.modules, b3.modules")
 
 	studentSub := c.getDB().
 		Select(`
