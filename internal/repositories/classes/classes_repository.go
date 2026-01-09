@@ -61,7 +61,7 @@ func (c *classesRepository) GetListClassesPage(page classes_model.ClassHDRReques
 		totalData int64
 	)
 
-	tx := c.getDB()
+	tx := c.getDB().Debug()
 
 	moduleAktifSub := c.getDB().Select(`
 		class_id,
@@ -82,12 +82,12 @@ func (c *classesRepository) GetListClassesPage(page classes_model.ClassHDRReques
 		Select(`
 			b1.class_id,
 			count(b1.id) courses,
-			b2.modules modul_aktif,
-			b3.modules modul_total
+			ifnull(b2.modules, 0) modul_aktif,
+			ifnull(b3.modules, 0)modul_total
 		`).
 		Table("class_course b1").
-		Joins("join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
-		Joins("join (?) b3 on b1.class_id = b3.class_id and b1.id = b3.class_course_id", moduleTotalSub).
+		Joins("left join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
+		Joins("left join (?) b3 on b1.class_id = b3.class_id and b1.id = b3.class_course_id", moduleTotalSub).
 		Group("class_id, b1.id, b2.modules, b3.modules")
 
 	studentSub := c.getDB().
@@ -101,6 +101,14 @@ func (c *classesRepository) GetListClassesPage(page classes_model.ClassHDRReques
 	if teacherId != 0 {
 		courseSub = courseSub.Where("teacher_id = ?", teacherId)
 	}
+
+	courseSub = c.getDB().Table("(?) bb", courseSub).
+		Select(`
+					bb.class_id,
+					sum(bb.courses) courses,
+					sum(bb.modul_aktif) modul_aktif,
+					sum(bb.modul_total) modul_total
+				`).Group("bb.class_id")
 
 	tx = tx.Select(`
 		distinct
