@@ -337,7 +337,7 @@ func (c *classesRepository) GetAllClassCourses(model classes_model.ClassCourse) 
 func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) (map[string]interface{}, error) {
 	var data map[string]interface{}
 
-	tx := c.getDB()
+	tx := c.getDB().Debug()
 
 	moduleAktifSub := c.getDB().Select(`
 		class_id,
@@ -363,8 +363,8 @@ func (c *classesRepository) GetInformDashboardClass(idClass int, teacherId int) 
 		`).
 		Table("class_course b1").
 		Joins("left join (?) b2 on b1.class_id = b2.class_id and b1.id = b2.class_course_id", moduleAktifSub).
-		Joins("left join (?) b3 on b1.class_id = b2.class_id and b1.id = b3.class_course_id", moduleTotalSub).
-		Group("class_id, b2.modules, b3.modules, b1.teacher_id")
+		Joins("left join (?) b3 on b1.class_id = b3.class_id and b1.id = b3.class_course_id", moduleTotalSub).
+		Group("class_id, b1.id, b2.modules, b3.modules, b1.teacher_id")
 
 	studentSub := c.getDB().
 		Select(`
