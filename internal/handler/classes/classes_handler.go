@@ -629,3 +629,39 @@ func (ctrl *ClassesHandler) UpdateModulDash(c *fiber.Ctx) error {
 			Json(c)
 	})
 }
+
+func (ctrl *ClassesHandler) DownloadTemplateAbsen(c *fiber.Ctx) error {
+	return utils.TryCatch(c, func() error {
+
+		id := c.Params("id")
+
+		Idconv, errId := strconv.Atoi(id)
+		if errId != nil {
+			return presentation.Response[any]().
+				SetErrorCode("500").SetStatusCode(500).
+				SetErrorDetail(errId.Error()).
+				Json(c)
+		}
+
+		data, err := ctrl.uc.GetStudentClassByIDClass(uint64(Idconv))
+		if err != nil {
+			return presentation.Response[any]().
+				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail(err.Error() + " " + "on populate student").
+				Json(c)
+		}
+
+		buf, err2 := import_helper.GenerateAbsenTemplate(data)
+		if err2 != nil {
+			return presentation.Response[any]().
+				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail(err2.Error() + " " + "on Generate template").
+				Json(c)
+		}
+
+		c.Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+		c.Set("Content-Disposition", "attachment; filename=template_import_student.xlsx")
+
+		return c.Send(buf.Bytes())
+	})
+}
