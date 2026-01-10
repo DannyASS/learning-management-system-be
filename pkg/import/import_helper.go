@@ -160,7 +160,7 @@ func GenerateAbsenTemplate(students []classes_model.ClassStudent) (*bytes.Buffer
 	sheet1 := "Template"
 	f.SetSheetName("Sheet1", sheet1)
 
-	headers := []string{"Student Id", "Absen", "Keterangan"}
+	headers := []string{"Student Id", "Absen", "Keterangan", "Tanggal"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet1, cell, h)
