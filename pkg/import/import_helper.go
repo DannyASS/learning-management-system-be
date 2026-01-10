@@ -171,7 +171,7 @@ func GenerateAbsenTemplate(students []classes_model.ClassStudent) (*bytes.Buffer
 		Font: &excelize.Font{Bold: true},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"#DDDDDD"}, Pattern: 1},
 	})
-	f.SetCellStyle(sheet1, "A1", "B1", style)
+	f.SetCellStyle(sheet1, "A1", "D1", style)
 
 	// === SHEET 2 === Daftar teacher Available
 	sheet2 := "Keterangan"
@@ -193,9 +193,9 @@ func GenerateAbsenTemplate(students []classes_model.ClassStudent) (*bytes.Buffer
 		"I": "Ijin",
 	}
 
+	row := 2
 	// data Teacher
 	for s := range absen {
-		row := 2
 
 		f.SetCellValue(sheet2, "A"+strconv.Itoa(row), s)
 		f.SetCellValue(sheet2, "B"+strconv.Itoa(row), absen[s])
@@ -213,7 +213,7 @@ func GenerateAbsenTemplate(students []classes_model.ClassStudent) (*bytes.Buffer
 	}
 
 	// header
-	listHeaderCourses := []string{"Courses Id", "Title", "Description"}
+	listHeaderCourses := []string{"Student Id", "Student Name"}
 	for i, h := range listHeaderCourses {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet3, cell, h)
