@@ -4,6 +4,7 @@ import (
 	"github.com/DannyAss/users/config"
 	"github.com/DannyAss/users/internal/database"
 	"github.com/DannyAss/users/internal/middleware"
+	absen_route "github.com/DannyAss/users/internal/routes/api/v1/absen"
 	classes_route "github.com/DannyAss/users/internal/routes/api/v1/classes"
 	course_route "github.com/DannyAss/users/internal/routes/api/v1/course"
 	import_route "github.com/DannyAss/users/internal/routes/api/v1/import"
@@ -25,4 +26,5 @@ func NeedAuth(db *database.DBManager, app fiber.Router, cfg *config.ConfigEnv) {
 	module_route.ModuleRoute(api_v1_routes, db, cfg)
 	classes_route.ClassesRoute(api_v1_routes, db, cfg)
 	import_route.ImportRoute(api_v1_routes, db, cfg)
+	absen_route.AbsenRoute(api_v1_routes, db, cfg)
 }
