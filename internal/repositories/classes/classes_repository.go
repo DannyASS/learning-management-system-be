@@ -37,6 +37,7 @@ type IClassesRepository interface {
 	DataAddModulDash(idClass int, teacherId int, moduleId []int) ([]map[string]interface{}, error)
 	InsertBulkModule(model []classes_model.ClassModule) error
 	UpdateClassModule(model classes_model.ClassModule) error
+	GetAvailableCourseCass(teacherId int, classId int) ([]map[string]any, error)
 }
 
 func NewClassesRepos(db *database.DBManager) IClassesRepository {
@@ -523,6 +524,7 @@ func (r *classesRepository) InsertBulkModule(model []classes_model.ClassModule) 
 
 	return nil
 }
+
 func (r *classesRepository) UpdateClassModule(model classes_model.ClassModule) error {
 	tx := r.getDB()
 
@@ -531,4 +533,24 @@ func (r *classesRepository) UpdateClassModule(model classes_model.ClassModule) e
 	}
 
 	return nil
+}
+
+func (r *classesRepository) GetAvailableCourseCass(teacherId int, classId int) ([]map[string]any, error) {
+	var data []map[string]any
+
+	tx := r.getDB().Debug()
+
+	tx = tx.Select(`
+		b.id,
+		b.title
+	`).Table("class_course a").Joins("join courses b on a.course_id = b.id")
+
+	tx = tx.Where("a.teacher_id = ?", teacherId)
+	tx = tx.Where("a.class_id = ?", classId)
+
+	if err := tx.Scan(&data).Error; err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

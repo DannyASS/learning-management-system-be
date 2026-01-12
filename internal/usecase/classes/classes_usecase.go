@@ -44,6 +44,7 @@ type IClassesUsecase interface {
 	GetAvailableModulDash(classId int, teacherId int) ([]map[string]interface{}, error)
 	AddModulDash(classId int, teacherId int, ModuleId []int, createdBy string) error
 	UpdateModulDash(data map[string]any, updatedBy string) error
+	GetCourseAvailable(teacherId int, classId int) ([]map[string]any, error)
 }
 
 func NewClassesUsecase(repo classes_repository.IClassesRepository, irepo import_repository.IImportRepository, db *database.DBManager, crepo courses_repository.ICourseRepos) IClassesUsecase {
@@ -359,6 +360,7 @@ func (c *classUsecase) AddModulDash(classId int, teacherId int, ModuleId []int, 
 
 	return nil
 }
+
 func (c *classUsecase) UpdateModulDash(data map[string]any, updatedBy string) error {
 
 	model := classes_model.ClassModule{
@@ -373,4 +375,14 @@ func (c *classUsecase) UpdateModulDash(data map[string]any, updatedBy string) er
 	}
 
 	return nil
+}
+
+func (c *classUsecase) GetCourseAvailable(teacherId int, classId int) ([]map[string]any, error) {
+
+	courses, err := c.repo.GetAvailableCourseCass(teacherId, classId)
+	if err != nil {
+		return nil, fmt.Errorf("%w : %s", InternalServerError, err.Error())
+	}
+
+	return courses, nil
 }
