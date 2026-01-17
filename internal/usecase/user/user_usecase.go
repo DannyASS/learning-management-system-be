@@ -91,6 +91,7 @@ func (u *userUsecase) Register(register user_model.RegisterDTO) error {
 		Phone:      phone,
 		Password:   password,
 		IsVerified: false,
+		Gender:     register.Gender,
 	}
 
 	user, CUerr := userRepo.CreateUser(userModel)
