@@ -7,6 +7,7 @@ import (
 	user_usecase "github.com/DannyAss/users/internal/usecase/user"
 	"github.com/DannyAss/users/pkg/presentation"
 	"github.com/DannyAss/users/pkg/utils"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,6 +18,8 @@ type UserHandler struct {
 func NewUserhandler(userUS user_usecase.IuserUsecae) *UserHandler {
 	return &UserHandler{userUsecase: userUS}
 }
+
+var validate = validator.New()
 
 func (cntrl *UserHandler) Login(c *fiber.Ctx) error {
 	return utils.TryCatch(c, func() error {
@@ -53,6 +56,14 @@ func (cntrl *UserHandler) Register(c *fiber.Ctx) error {
 		if err := c.BodyParser(&request); err != nil {
 			return presentation.Response[any]().
 				SetErrorCode("422").SetStatusCode(422).
+				SetErrorDetail(err.Error()).
+				Json(c)
+		}
+
+		if err := validate.Struct(request); err != nil {
+			return presentation.Response[any]().
+				SetErrorCode("VALIDATION_ERROR").
+				SetStatusCode(422).
 				SetErrorDetail(err.Error()).
 				Json(c)
 		}
