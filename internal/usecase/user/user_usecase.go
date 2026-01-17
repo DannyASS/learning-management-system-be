@@ -141,6 +141,11 @@ func (u *userUsecase) Login(login user_model.LoginDTO) (*user_model.LoginRespons
 		return nil, nil, errTx
 	}
 
+	if user.IsVerified == false {
+		errTx = errors.New("akun anda sedang tahap verifikasi mohon coba beberapa saat lagi")
+		return nil, nil, errTx
+	}
+
 	// GET ROLE
 	roleId, err := userRepos.RoleUserWithRole(user_model.FilterUser{
 		Id: user.ID,
