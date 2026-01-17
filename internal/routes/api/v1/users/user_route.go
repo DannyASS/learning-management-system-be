@@ -21,6 +21,7 @@ func UserRotes(router fiber.Router, db *database.DBManager, cfg *config.ConfigEn
 		user.Post("/logout", userHandler.Logout)
 		user.Get("/refreshtoken", userHandler.RefreshToken)
 		user.Get("/getuserole", userHandler.GetUsers)
+		user.Get("/getuserneedapprove", userHandler.GetUsersNeedApproval)
 		user.Get("/all-teacher", userHandler.GetAllTeacher)
 	}
 

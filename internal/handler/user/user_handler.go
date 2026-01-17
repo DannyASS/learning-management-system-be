@@ -239,3 +239,36 @@ func (h *UserHandler) GetAllTeacher(c *fiber.Ctx) error {
 			Json(c)
 	})
 }
+
+func (cntrl *UserHandler) GetUsersNeedApproval(c *fiber.Ctx) error {
+	return utils.TryCatch(c, func() error {
+
+		var request user_model.Pagination
+
+		// Parse query param
+		if err := c.QueryParser(&request); err != nil {
+			return presentation.Response[any]().
+				SetErrorCode("422").
+				SetStatusCode(422).
+				SetErrorDetail(err.Error()).
+				Json(c)
+		}
+
+		// Call usecase
+		response, useErr := cntrl.userUsecase.GetUsersNeedApproval(request)
+		if useErr != nil {
+			return presentation.Response[any]().
+				SetErrorCode("422").
+				SetStatusCode(422).
+				SetErrorDetail(useErr.Error()).
+				Json(c)
+		}
+
+		// Success response
+		return presentation.Response[any]().
+			SetStatus(true).
+			SetStatusCode(200).
+			SetData(response).
+			Json(c)
+	})
+}

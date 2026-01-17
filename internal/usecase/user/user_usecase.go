@@ -29,6 +29,7 @@ type IuserUsecae interface {
 	Updateuser(req user_model.RequestUserGetList) error
 	Logout(refreshToken string) (*fiber.Cookie, error)
 	GetAllTeacher() ([]map[string]interface{}, error)
+	GetUsersNeedApproval(req user_model.Pagination) (map[string]interface{}, error)
 }
 
 func NewUserCaseUser(userRepos users_repository.IuserRepos, cfg *config.ConfigEnv, db *database.DBManager) IuserUsecae {
@@ -402,4 +403,45 @@ func (u *userUsecase) GetAllTeacher() ([]map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func (u *userUsecase) GetUsersNeedApproval(req user_model.Pagination) (map[string]interface{}, error) {
+	if req.Page < 1 {
+		req.Page = 1
+	}
+
+	if req.Perpage < 1 {
+		req.Perpage = 10
+	}
+
+	data, page, err := u.userRepo.GetUserNeedApproval(req)
+	if err != nil {
+		return nil, err
+	}
+
+	for c := range data {
+		Email, err1 := u.crypto.Decrypt(data[c].Email)
+		if err1 != nil {
+			data[c].Email = ""
+		} else {
+			data[c].Email = string(Email)
+		}
+
+		Phone, err2 := u.crypto.Decrypt(data[c].Phone)
+		if err2 != nil {
+			data[c].Phone = ""
+		} else {
+			data[c].Phone = string(Phone)
+		}
+	}
+
+	response := map[string]interface{}{
+		"data":       data,
+		"page":       page.Page,
+		"perpage":    page.Perpage,
+		"total_data": page.TotalData,
+		"total_page": page.TotalPage,
+	}
+
+	return response, nil
 }

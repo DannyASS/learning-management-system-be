@@ -31,6 +31,7 @@ type IuserRepos interface {
 	UpdateUserRole(role_id int, filter user_model.FilterUser) error
 	RevokeToken(token string) error
 	AllGetTeacher() ([]user_model.User, error)
+	GetUserNeedApproval(page user_model.Pagination) ([]user_model.RequestUserGetList, *user_model.Pagination, error)
 }
 
 func NewReposUser(db *database.DBManager) IuserRepos {
@@ -290,4 +291,46 @@ func (r *userRepos) AllGetTeacher() ([]user_model.User, error) {
 	}
 
 	return user, nil
+}
+
+func (u *userRepos) GetUserNeedApproval(page user_model.Pagination) ([]user_model.RequestUserGetList, *user_model.Pagination, error) {
+	db := u.getDB()
+
+	var totalData int64
+	data := []user_model.RequestUserGetList{}
+
+	// Base query (tanpa limit)
+	baseQuery := db.Table("users a").
+		Select(`
+			a.id as id,
+			a.name as name,
+			a.username as username,
+			a.phone as phone,
+			a.email as email,
+			c.description as role_name,
+			c.id as role_id
+		`).Where("a.is_verified = ?", 0)
+
+	// Search (jika ada)
+	if page.Search != "" {
+		baseQuery = baseQuery.Where("a.name ILIKE ?", "%"+page.Search+"%")
+	}
+
+	// Count
+	if err := baseQuery.Count(&totalData).Error; err != nil {
+		return nil, nil, err
+	}
+
+	// Pagination
+	if err := baseQuery.
+		Limit(page.Perpage).
+		Offset((page.Page - 1) * page.Perpage).
+		Scan(&data).Error; err != nil {
+		return nil, nil, err
+	}
+
+	page.TotalData = int(totalData)
+	page.TotalPage = int(math.Ceil(float64(totalData) / float64(page.Perpage)))
+
+	return data, &page, nil
 }
