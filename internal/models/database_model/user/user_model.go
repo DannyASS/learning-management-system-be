@@ -54,13 +54,13 @@ type UserRoleDTO struct {
 }
 
 type RegisterDTO struct {
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Gender   string `json:"gender"`
-	Password string `json:"password"`
-	Phone    string `json:"phone"`
-	Role     string `json:"role"`
+	Name     string `json:"name" validate:"required"`
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required"`
+	Gender   string `json:"gender" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	Phone    string `json:"phone" validate:"required"`
+	Role     string `json:"role" validate:"required"`
 }
 
 type LoginDTO struct {
