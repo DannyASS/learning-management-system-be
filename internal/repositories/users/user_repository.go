@@ -309,7 +309,9 @@ func (u *userRepos) GetUserNeedApproval(page user_model.Pagination) ([]user_mode
 			a.email as email,
 			c.description as role_name,
 			c.id as role_id
-		`).Where("a.is_verified = ?", 0)
+		`).Where("a.is_verified = ?", 0).
+		Joins("join user_roles b on a.id = b.user_id").
+		Joins("join roles c on c.id = b.role_id")
 
 	// Search (jika ada)
 	if page.Search != "" {
