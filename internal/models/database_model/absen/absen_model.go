@@ -46,7 +46,7 @@ type DTOAbsenRequest struct {
 }
 
 type DTOAbsenDtl struct {
-	StudentID  uint64  `json:"student_id" gorm:"not null"`
+	StudentID  uint64  `json:"studentId" gorm:"not null"`
 	Status     string  `json:"status" gorm:"type:enum('SAKIT','IZIN','ALFA');not null"`
 	Keterangan *string `json:"keterangan" gorm:"type:text"`
 }
